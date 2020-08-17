@@ -15,14 +15,14 @@ func main(){
 	baseCollection := db.Base() // get base collection
 
 	//Insert 20 new document
-	// for i := 0; i < 20; i++ {
-	// 	baseCollection.Insert(
-	// 		&Employer{
-	// 			Name: fmt.Sprintf("%d docklite", i),
-	// 			Address: "20, daniel's street, Abuja",
-	// 		},
-	// 	)
-	// }
+	for i := 0; i < 20; i++ {
+		baseCollection.Insert(
+			&Employer{
+				Name: fmt.Sprintf("%d docklite", i),
+				Address: "20, daniel's street, Abuja",
+			},
+		)
+	}
 	
 
 	e := &Employer{}
@@ -58,14 +58,14 @@ func main(){
 	//create a new collection from 
 	userCollection := baseCollection.Collection("user")
 	//Insert 20 new document
-	// for i := 0; i < 20; i++ {
-	// 	userCollection.Insert(
-	// 		&User{
-	// 			Name: fmt.Sprintf("%d docklite %s", i,"user"),
-	// 			Address: "20, daniel's street, Abuja",
-	// 		},
-	// 	)
-	// }
+	for i := 0; i < 20; i++ {
+		userCollection.Insert(
+			&User{
+				Name: fmt.Sprintf("%d docklite %s", i,"user"),
+				Address: "20, daniel's street, Abuja",
+			},
+		)
+	}
 	
 	u := &User{}
 	userCollection.FindOne(14, u)

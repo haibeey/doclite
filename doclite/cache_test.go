@@ -10,7 +10,7 @@ func TestCache(t *testing.T) {
 	)
 	MaxCacheSize = 100
 	node := &Node{document: &Document{id: int64(100)}}
-	c := NewCache(&DB{overflows: []overflowNode{}, metadata: &Meta{}})
+	c := NewCache(&DB{overflows: []overflowNode{}, metadata: &Meta{}, isTesting: true})
 	c.node = node
 	c.ids = make(map[int64]*Node)
 	node.children = c

@@ -95,7 +95,8 @@ for i in range(10):
     baseCollection.Insert({"a":1})
 print(baseCollection.FindOne(1))
 baseCollection.DeleteOne(2)
-baseCollection.Delete({"a":1})
 print(baseCollection.Find({"a":1}))
+baseCollection.Delete({"a":1})
+
 d.Close()
 

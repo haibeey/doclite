@@ -26,6 +26,8 @@ type DB struct {
 	metadata     *Meta
 	rootTree     *Btree
 	overflows    []overflowNode
+
+	isTesting bool // use to indicate if we are doing unittest for the DB
 }
 
 /*Meta represent the database file metadata

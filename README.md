@@ -1,7 +1,7 @@
 # Doclite
-#### Doclite is a light-weight document base database libary much like how SQLite is for MySQL so is how doclite is to MongoDB.
+#### Doclite is a light-weight document base database libary much like how SQLite is for SQL so is how doclite is to NoSQL.
 
-#### Doclite provide a nice and simple Api for various programming languages which include golang, python, java, kotlin and javascript to persist document base data types/structures on disks.
+#### Doclite provide a nice and simple Api to persist document base data types/structures on disks.
 
 #### Code Samples 
 ##### A Golang example below have a look at the example folder for other languages
@@ -29,13 +29,13 @@
 	baseCollection.DeleteOne(16)
 
 	e = &Employer{}
-  // get the 17 document inserted
+    // get the 17 document inserted
 	baseCollection.FindOne(17, e)
 	fmt.Println(e)
 
 	e=&Employer{}
 	joe:=&Employer{Address:"doe"}
-  // find all document matching the joe
+    // find all document matching the joe
 	cur:=baseCollection.Find(joe,e)
 	for {
 		emp:=cur.Next()

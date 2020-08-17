@@ -92,7 +92,6 @@ func (t *Btree) diskInitBtree() {
 		data := []byte{}
 		node := t.createNode(maxInt64(int64(i)*MinKeys, 1), data, true)
 		node.document.offset = t.Pages[i] * pageSize
-		fmt.Println(node.document.offset)
 		node.document.data, _ = node.children.read(node)
 		node.numChildren = MinKeys
 		if i+1 == t.NumRoots {
@@ -103,6 +102,15 @@ func (t *Btree) diskInitBtree() {
 	for i := 0; i < len(t.Pool); i++ {
 		t.findPool[t.Pool[i]] = t.Pool[i]
 	}
+}
+
+func (t *Btree) addRoot(node *Node) {
+	t.roots = append(t.roots, node)
+	t.NumRoots++
+	t.db.metadata.incPages()
+	t.Pages = append(t.Pages, t.db.metadata.NumPages)
+	node.document.offset = int64(t.db.metadata.NumPages * pageSize)
+	t.db.metadata.OverflowDataOffset = maxInt64(node.document.offset+pageSize, t.db.metadata.OverflowDataOffset)
 }
 
 // Insert an item into the btree with the specified key
@@ -117,25 +125,13 @@ func (t *Btree) Insert(data []byte) int64 {
 	}
 	node := t.createNode(id, data, true)
 	if t.NumDocuments == 0 {
-		// The root parent is nil
-		t.roots = append(t.roots, node)
-		t.NumRoots++
-		t.db.metadata.incPages()
-		t.Pages = append(t.Pages, t.db.metadata.NumPages)
-		node.document.offset = t.db.metadata.NumPages * pageSize
-		t.db.metadata.OverflowDataOffset = maxInt64(node.document.offset+pageSize, t.db.metadata.OverflowDataOffset)
-
+		t.addRoot(node)
 	} else {
 		if (id-1)%MinKeys == 0 {
 			if fromPool {
 				t.Update(id, data)
 			} else {
-				t.roots = append(t.roots, node)
-				t.NumRoots++
-				t.db.metadata.incPages()
-				t.Pages = append(t.Pages, t.db.metadata.NumPages)
-				node.document.offset = int64(t.db.metadata.NumPages * pageSize)
-				t.db.metadata.OverflowDataOffset = maxInt64(node.document.offset+pageSize, t.db.metadata.OverflowDataOffset)
+				t.addRoot(node)
 			}
 		} else {
 			node.isRoot = false
@@ -265,7 +261,7 @@ func (t *Btree) Save() {
 	for _, n := range t.roots {
 		n.save()
 	}
-	for _,subT:=range t.SubCollections{
+	for _, subT := range t.SubCollections {
 		subT.Save()
 	}
 }

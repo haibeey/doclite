@@ -52,7 +52,7 @@ func testBtree(bt *Btree, t *testing.T) *Btree {
 	return bt.Get("newcollection")
 }
 func TestBtree(t *testing.T) {
-	db := &DB{overflows: []overflowNode{}, metadata: &Meta{}}
+	db := &DB{overflows: []overflowNode{}, metadata: &Meta{}, isTesting: true}
 	bt := db.newBtree()
 	bt1 := testBtree(bt, t)
 
