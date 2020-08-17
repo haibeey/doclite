@@ -42,12 +42,6 @@ func (d *Document) checkDeleted() {
 	d.isDeleted = true
 }
 
-// overflowDocument  type representing a document that has overflow
-type overflowDocument struct {
-	id   int64
-	data []byte
-}
-
 // Cache to hold document in memory .uses LRU cache policy
 type Cache struct {
 	node            *Node // root node owning this cache
@@ -55,11 +49,12 @@ type Cache struct {
 	currentCapacity int
 	nodes           deque.Deque
 	ids             map[int64]*Node
+	tree            *Btree
 }
 
 //NewCache initilize a new cache
-func NewCache(db *DB) *Cache {
-	c := &Cache{db: db}
+func NewCache(db *DB, tree *Btree) *Cache {
+	c := &Cache{db: db, tree: tree}
 	c.ids = make(map[int64]*Node)
 	return c
 }

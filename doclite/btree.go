@@ -29,6 +29,8 @@ type Btree struct {
 	roots         []*Node
 	db            *DB
 	initBtreeRoot bool
+	overflows     []*overflowNode
+	lenOverflow   int
 }
 
 // The Node in our btree
@@ -53,7 +55,7 @@ func (t *Btree) incNumDocs() {
 func (t *Btree) createNode(id int64, data []byte, isRoot bool) *Node {
 	doc := &Document{id: id, data: data}
 	if isRoot {
-		c := NewCache(t.db)
+		c := NewCache(t.db, t)
 		c.node = &Node{children: c, document: doc, isRoot: isRoot}
 		return c.node
 	}
@@ -102,6 +104,7 @@ func (t *Btree) diskInitBtree() {
 	for i := 0; i < len(t.Pool); i++ {
 		t.findPool[t.Pool[i]] = t.Pool[i]
 	}
+	t.overflows = []*overflowNode{}
 }
 
 func (t *Btree) addRoot(node *Node) {
@@ -155,7 +158,7 @@ func (t *Btree) Insert(data []byte) int64 {
 
 // returns the best fitted leafs parent node to insert this id in terms of best pos
 func (t *Btree) findFitingNode(id int64) (*Node, error) {
-	index := binarySearch(id, t.roots, t.NumRoots)
+	index := indexOfNodes(id, t.roots, t.NumRoots)
 	if index < t.NumRoots {
 		return t.roots[index], nil
 	}

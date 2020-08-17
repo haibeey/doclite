@@ -52,7 +52,7 @@ func testBtree(bt *Btree, t *testing.T) *Btree {
 	return bt.Get("newcollection")
 }
 func TestBtree(t *testing.T) {
-	db := &DB{overflows: []overflowNode{}, metadata: &Meta{}, isTesting: true}
+	db := &DB{metadata: &Meta{}, isTesting: true}
 	bt := db.newBtree()
 	bt1 := testBtree(bt, t)
 
@@ -79,26 +79,26 @@ func TestBinarySearch(t *testing.T) {
 		nodes = append(nodes, n)
 	}
 	for i := 0; i < 100; i++ {
-		if ids[i] != nodes[binarySearch(ids[i], nodes, 100)].document.id {
-			t.Errorf(" nodes not sorted %d %d", i, binarySearch(ids[i], nodes, 100))
+		if ids[i] != nodes[indexOfNodes(ids[i], nodes, 100)].document.id {
+			t.Errorf(" nodes not sorted %d %d", i, indexOfNodes(ids[i], nodes, 100))
 		}
 	}
 
 	list := []*Node{&Node{document: &Document{id: 1, data: []byte{}}}, &Node{document: &Document{id: 33, data: []byte{}}}, &Node{document: &Document{id: 65, data: []byte{}}}, &Node{document: &Document{id: 97, data: []byte{}}}}
 
-	if binarySearch(int64(3), list, 4) != 0 {
+	if indexOfNodes(int64(3), list, 4) != 0 {
 		t.Errorf(" wrong node")
 	}
 
-	if binarySearch(int64(40), list, 4) != 1 {
+	if indexOfNodes(int64(40), list, 4) != 1 {
 		t.Errorf(" wrong node")
 	}
 
-	if binarySearch(int64(78), list, 4) != 2 {
+	if indexOfNodes(int64(78), list, 4) != 2 {
 		t.Errorf(" wrong node")
 	}
 
-	if binarySearch(int64(98), list, 4) != 3 {
+	if indexOfNodes(int64(98), list, 4) != 3 {
 		t.Errorf(" wrong node")
 	}
 }

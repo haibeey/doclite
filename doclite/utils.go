@@ -8,7 +8,7 @@ import (
 
 var readWriteMutex sync.Mutex
 
-func binarySearch(key int64, nodes []*Node, nodesLen int) int {
+func indexOfNodes(key int64, nodes []*Node, nodesLen int) int {
 	l := 0
 	r := nodesLen
 	mid := nodesLen
@@ -33,7 +33,34 @@ func binarySearch(key int64, nodes []*Node, nodesLen int) int {
 		}
 		mid--
 	}
+	return mid
+}
 
+func indexOfOfn(key int64, nodes []*overflowNode, nodesLen int) int {
+	l := 0
+	r := nodesLen
+	mid := nodesLen
+
+	for r-l > 0 {
+		mid = l + (r-l)/2
+		if nodes[mid].ID == key {
+			return mid
+		} else if key < nodes[mid].ID {
+			r = mid
+		} else {
+			l = mid + 1
+		}
+	}
+	for mid-1 > 0 {
+		if nodes[mid].ID < key {
+			return mid
+		} else if nodes[mid].ID == key {
+			return mid
+		} else if nodes[mid-1].ID < key {
+			return mid - 1
+		}
+		mid--
+	}
 	return mid
 }
 

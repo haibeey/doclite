@@ -20,10 +20,10 @@ func (c *Cache) write(n *Node) error {
 	data := n.document.data
 	if len(n.document.data) > dataSize {
 		data = n.document.data[:dataSize]
+		c.tree.lenOverflow++
 		c.overflowDoc(n)
 	} else {
 		sizeFill := dataSize - len(n.document.data)
-		
 		if sizeFill > 0 {
 			data = append(data, []byte(strings.Repeat(demarcationbByteString, sizeFill))...)
 		}
@@ -74,16 +74,30 @@ func (c *Cache) overflowDoc(n *Node) error {
 
 	err = c.writeOverflowfile(buf)
 	if c.db.isTesting {
-		c.db.overflows = append(c.db.overflows, *ofn)
 		c.db.metadata.OverflowSize += int64(len(buf))
+	} else {
+		c.insertOfn(ofn)
 	}
 	return err
 }
 
+func (c *Cache) insertOfn(ofn *overflowNode) {
+	mid := indexOfOfn(ofn.ID, c.tree.overflows, c.tree.lenOverflow)
+	if mid < c.tree.lenOverflow {
+		if c.tree.overflows[mid].ID == ofn.ID {
+			return
+		}
+	}
+	c.tree.overflows = append(c.tree.overflows, nil)
+	copy(c.tree.overflows[mid+1:], c.tree.overflows[mid:])
+	c.tree.overflows[mid] = ofn
+}
+
 func (c *Cache) getOverflowData(n *Node) []byte {
-	for _, ofn := range c.db.overflows {
-		if ofn.ID == n.document.id {
-			return ofn.Data
+	mid := indexOfOfn(n.document.id, c.tree.overflows, c.tree.lenOverflow)
+	if mid < c.tree.lenOverflow {
+		if c.tree.overflows[mid].ID == n.document.id {
+			return c.tree.overflows[mid].Data
 		}
 	}
 	var (
@@ -107,13 +121,10 @@ func (c *Cache) getOverflowData(n *Node) []byte {
 		x += size
 		ofn := &overflowNode{}
 		json.Unmarshal(buf, ofn)
-		c.db.overflows = append(c.db.overflows, *ofn)
+		c.insertOfn(ofn)
 		if n.document.id == ofn.ID {
 			return ofn.Data
 		}
-
-		c.db.overflows = append(c.db.overflows, *ofn)
-
 	}
 
 	return []byte{}

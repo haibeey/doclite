@@ -25,7 +25,6 @@ type DB struct {
 	overflowfile *os.File
 	metadata     *Meta
 	rootTree     *Btree
-	overflows    []overflowNode
 
 	isTesting bool // use to indicate if we are doing unittest for the DB
 }
@@ -77,7 +76,7 @@ func openFile(fileName string, flag int) *os.File {
 func OpenDB(fileName string) *DB {
 	if _, err := os.Stat(fileName); os.IsNotExist(err) {
 		f := openFile(fileName, os.O_RDWR|os.O_CREATE)
-		db := &DB{file: f, overflows: []overflowNode{}}
+		db := &DB{file: f}
 		db.metadata = &Meta{
 			MagicString:        []byte(magicString),
 			NofCollections:     1,
@@ -90,7 +89,7 @@ func OpenDB(fileName string) *DB {
 		return db
 	}
 	os.Remove(fmt.Sprintf("%s.overflow", fileName))
-	db := &DB{file: openFile(fileName, os.O_RDWR), overflows: []overflowNode{}}
+	db := &DB{file: openFile(fileName, os.O_RDWR)}
 	db.getMeta()
 	t, err := db.initBtree()
 	if err != nil {
@@ -114,6 +113,7 @@ func (db *DB) newBtree() *Btree {
 		findPool:       make(map[int64]int64),
 		Pages:          []int64{},
 		initBtreeRoot:  true,
+		overflows:      []*overflowNode{},
 	}
 }
 
