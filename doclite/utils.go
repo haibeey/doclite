@@ -3,10 +3,7 @@ package doclite
 import (
 	"os"
 	"reflect"
-	"sync"
 )
-
-var readWriteMutex sync.Mutex
 
 func indexOfNodes(key int64, nodes []*Node, nodesLen int) int {
 	l := 0
@@ -137,15 +134,19 @@ loop:
 	return ret
 }
 
-func read(f *os.File, offset int64, buf []byte) (int, error) {
-	readWriteMutex.Lock()
-	defer readWriteMutex.Unlock()
+func read(f *os.File, offset int64, buf []byte, lock bool) (int, error) {
+	if lock {
+		readWriteMutex.Lock()
+		defer readWriteMutex.Unlock()
+	}
 	return f.ReadAt(buf, offset)
 }
 
-func write(f *os.File, offset int64, data []byte) error {
-	readWriteMutex.Lock()
-	defer readWriteMutex.Unlock()
+func write(f *os.File, offset int64, data []byte, lock bool) error {
+	if lock {
+		readWriteMutex.Lock()
+		defer readWriteMutex.Unlock()
+	}
 	_, err := f.WriteAt(data, offset)
 	if err != nil {
 		return err

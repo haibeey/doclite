@@ -26,7 +26,9 @@ type DB struct {
 	metadata     *Meta
 	rootTree     *Btree
 
-	isTesting bool // use to indicate if we are doing unittest for the DB
+	overflows   []*overflowNode
+	lenOverflow int
+	isTesting   bool // use to indicate if we are doing unittest for the DB
 }
 
 /*Meta represent the database file metadata
@@ -76,7 +78,7 @@ func openFile(fileName string, flag int) *os.File {
 func OpenDB(fileName string) *DB {
 	if _, err := os.Stat(fileName); os.IsNotExist(err) {
 		f := openFile(fileName, os.O_RDWR|os.O_CREATE)
-		db := &DB{file: f}
+		db := &DB{file: f, overflows: []*overflowNode{}}
 		db.metadata = &Meta{
 			MagicString:        []byte(magicString),
 			NofCollections:     1,
@@ -113,7 +115,6 @@ func (db *DB) newBtree() *Btree {
 		findPool:       make(map[int64]int64),
 		Pages:          []int64{},
 		initBtreeRoot:  true,
-		overflows:      []*overflowNode{},
 	}
 }
 

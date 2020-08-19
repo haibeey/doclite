@@ -3,13 +3,18 @@ package doclite
 import (
 	"encoding/binary"
 	"encoding/json"
+	"os"
+	"reflect"
 	"strings"
+	"sync"
 )
 
 const (
 	demarcationbByteString = " "
 	demarcationByte        = byte(32)
 )
+
+var readWriteMutex sync.Mutex
 
 func (c *Cache) write(n *Node) error {
 	if c.db.file == nil {
@@ -18,9 +23,18 @@ func (c *Cache) write(n *Node) error {
 	}
 
 	data := n.document.data
+	if reflect.DeepEqual(data, []byte("deleted")) {
+		ofn := c.getOverflowData(n)
+		lenOfnData := len(ofn.Data)
+		if lenOfnData > 0 {
+			d, err := json.Marshal(ofn)
+			if err == nil {
+				c.cutOverflowfile(ofn.Offset, ofn.Offset+int64(len(d)+8))
+			}
+		}
+	}
 	if len(n.document.data) > dataSize {
 		data = n.document.data[:dataSize]
-		c.tree.lenOverflow++
 		c.overflowDoc(n)
 	} else {
 		sizeFill := dataSize - len(n.document.data)
@@ -28,7 +42,7 @@ func (c *Cache) write(n *Node) error {
 			data = append(data, []byte(strings.Repeat(demarcationbByteString, sizeFill))...)
 		}
 	}
-	if err := write(c.db.file, n.document.offset, data); err != nil {
+	if err := write(c.db.file, n.document.offset, data, true); err != nil {
 		return err
 	}
 	return nil
@@ -39,7 +53,7 @@ func (c *Cache) read(n *Node) ([]byte, error) {
 		return []byte{}, nil
 	}
 	buf := make([]byte, dataSize)
-	_, err := read(c.db.file, n.document.offset, buf)
+	_, err := read(c.db.file, n.document.offset, buf, true)
 	lb := dataSize
 	for lb >= 1 {
 
@@ -49,7 +63,7 @@ func (c *Cache) read(n *Node) ([]byte, error) {
 		lb--
 	}
 	if lb == dataSize {
-		buf = append(buf, c.getOverflowData(n)...)
+		buf = append(buf, c.getOverflowData(n).Data...)
 	} else {
 		buf = buf[:lb]
 	}
@@ -57,12 +71,17 @@ func (c *Cache) read(n *Node) ([]byte, error) {
 }
 
 type overflowNode struct {
-	ID   int64
-	Data []byte
+	ID     int64
+	Data   []byte
+	Offset int64
 }
 
 func (c *Cache) overflowDoc(n *Node) error {
-	ofn := &overflowNode{ID: n.document.id, Data: n.document.data[dataSize:]}
+	ofn := &overflowNode{
+		ID:     n.document.id,
+		Data:   n.document.data[dataSize:],
+		Offset: c.db.metadata.OverflowSize,
+	}
 	buf := make([]byte, 8)
 	data, err := json.Marshal(ofn)
 	if err != nil {
@@ -73,31 +92,31 @@ func (c *Cache) overflowDoc(n *Node) error {
 	buf = append(buf, data...)
 
 	err = c.writeOverflowfile(buf)
-	if c.db.isTesting {
-		c.db.metadata.OverflowSize += int64(len(buf))
-	} else {
+	c.db.metadata.OverflowSize += int64(len(buf))
+	if !c.db.isTesting {
 		c.insertOfn(ofn)
 	}
 	return err
 }
 
 func (c *Cache) insertOfn(ofn *overflowNode) {
-	mid := indexOfOfn(ofn.ID, c.tree.overflows, c.tree.lenOverflow)
-	if mid < c.tree.lenOverflow {
-		if c.tree.overflows[mid].ID == ofn.ID {
+	mid := indexOfOfn(ofn.ID, c.db.overflows, c.db.lenOverflow)
+	if mid < c.db.lenOverflow {
+		if c.db.overflows[mid].ID == ofn.ID {
 			return
 		}
 	}
-	c.tree.overflows = append(c.tree.overflows, nil)
-	copy(c.tree.overflows[mid+1:], c.tree.overflows[mid:])
-	c.tree.overflows[mid] = ofn
+	c.db.overflows = append(c.db.overflows, nil)
+	copy(c.db.overflows[mid+1:], c.db.overflows[mid:])
+	c.db.overflows[mid] = ofn
+	c.db.lenOverflow++
 }
 
-func (c *Cache) getOverflowData(n *Node) []byte {
-	mid := indexOfOfn(n.document.id, c.tree.overflows, c.tree.lenOverflow)
-	if mid < c.tree.lenOverflow {
-		if c.tree.overflows[mid].ID == n.document.id {
-			return c.tree.overflows[mid].Data
+func (c *Cache) getOverflowData(n *Node) *overflowNode {
+	mid := indexOfOfn(n.document.id, c.db.overflows, c.db.lenOverflow)
+	if mid < c.db.lenOverflow {
+		if c.db.overflows[mid].ID == n.document.id {
+			return c.db.overflows[mid]
 		}
 	}
 	var (
@@ -123,17 +142,34 @@ func (c *Cache) getOverflowData(n *Node) []byte {
 		json.Unmarshal(buf, ofn)
 		c.insertOfn(ofn)
 		if n.document.id == ofn.ID {
-			return ofn.Data
+			return ofn
 		}
 	}
 
-	return []byte{}
+	return &overflowNode{}
+}
+func (c *Cache) cutOverflowfile(start, end int64) {
+	c.db.overflowfile.Seek(end, os.SEEK_SET)
+	readWriteMutex.Lock()
+	defer readWriteMutex.Unlock()
+	buf := make([]byte, 1000)
+	for {
+		r, err := read(c.db.overflowfile, end, buf, false)
+		write(c.db.overflowfile, start, buf[:r], false)
+		if err != nil || r == 0 {
+			c.db.overflowfile.Truncate(end)
+			return
+		}
+		end += int64(r)
+		start += int64(r)
+	}
+
 }
 
 func (c *Cache) writeOverflowfile(data []byte) error {
-	return write(c.db.overflowfile, c.db.metadata.OverflowSize, data)
+	return write(c.db.overflowfile, c.db.metadata.OverflowSize, data, true)
 }
 
 func (c *Cache) readOverflowfile(offset int64, buf []byte) (int, error) {
-	return read(c.db.overflowfile, offset, buf)
+	return read(c.db.overflowfile, offset, buf, true)
 }

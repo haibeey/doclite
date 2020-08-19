@@ -29,8 +29,6 @@ type Btree struct {
 	roots         []*Node
 	db            *DB
 	initBtreeRoot bool
-	overflows     []*overflowNode
-	lenOverflow   int
 }
 
 // The Node in our btree
@@ -104,7 +102,6 @@ func (t *Btree) diskInitBtree() {
 	for i := 0; i < len(t.Pool); i++ {
 		t.findPool[t.Pool[i]] = t.Pool[i]
 	}
-	t.overflows = []*overflowNode{}
 }
 
 func (t *Btree) addRoot(node *Node) {

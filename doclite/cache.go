@@ -128,13 +128,13 @@ func (c *Cache) get(id int64) (*Node, error) {
 
 //Delete remove item into this cache
 func (c *Cache) Delete(id int64) {
-	n, err := c.get(id)
-	if err != nil {
-		return
-	}
 	if id == c.node.document.id {
 		c.node.document.data = []byte("deleted")
-		c.write(n)
+		c.write(c.node)
+		return
+	}
+	n, err := c.get(id)
+	if err != nil {
 		return
 	}
 	if n != nil {
