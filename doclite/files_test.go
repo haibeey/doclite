@@ -21,7 +21,7 @@ func TestFile(t *testing.T) {
 func testFile(add int, t *testing.T) {
 	node := &Node{document: &Document{id: int64(100)}}
 	db := &DB{metadata: &Meta{}, isTesting: true}
-	c := NewCache(db, db.newBtree())
+	c := NewCache(db, db.newBtree(""))
 	c.node = node
 	c.ids = make(map[int64]*Node)
 	node.children = c
@@ -32,7 +32,7 @@ func testFile(add int, t *testing.T) {
 	os.Remove("filetestoverflow")
 	db.file = openFile("filetest", os.O_RDWR|os.O_CREATE)
 	db.overflowfile = openFile("filetestoverflow", os.O_RDWR|os.O_CREATE)
-	c.db.overflows = []*overflowNode{}
+	db.overflows=make(map[string][]*overflowNode)
 
 	for i := 1; i <= numOfInsert; i++ {
 		n := &Node{document: &Document{id: int64(i), data: data, offset: int64(i * dataSize)}}

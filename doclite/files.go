@@ -74,6 +74,7 @@ type overflowNode struct {
 	ID     int64
 	Data   []byte
 	Offset int64
+	BtName string
 }
 
 func (c *Cache) overflowDoc(n *Node) error {
@@ -100,23 +101,26 @@ func (c *Cache) overflowDoc(n *Node) error {
 }
 
 func (c *Cache) insertOfn(ofn *overflowNode) {
-	mid := indexOfOfn(ofn.ID, c.db.overflows, c.db.lenOverflow)
-	if mid < c.db.lenOverflow {
-		if c.db.overflows[mid].ID == ofn.ID {
+	nodes:=c.db.getOverflow(c.tree.Name)
+	mid := indexOfOfn(ofn.ID, nodes, c.tree.lenOverflow)
+	if mid < c.tree.lenOverflow {
+		if nodes[mid].ID == ofn.ID {
 			return
 		}
 	}
-	c.db.overflows = append(c.db.overflows, nil)
-	copy(c.db.overflows[mid+1:], c.db.overflows[mid:])
-	c.db.overflows[mid] = ofn
-	c.db.lenOverflow++
+	nodes = append(nodes, nil)
+	copy(nodes[mid+1:], nodes[mid:])
+	nodes[mid] = ofn
+	c.tree.lenOverflow++
+	c.db.overflows[c.tree.Name]=nodes
 }
 
 func (c *Cache) getOverflowData(n *Node) *overflowNode {
-	mid := indexOfOfn(n.document.id, c.db.overflows, c.db.lenOverflow)
-	if mid < c.db.lenOverflow {
-		if c.db.overflows[mid].ID == n.document.id {
-			return c.db.overflows[mid]
+	nodes:=c.db.getOverflow(c.tree.Name)
+	mid := indexOfOfn(n.document.id, nodes, c.tree.lenOverflow)
+	if mid < c.tree.lenOverflow {
+		if nodes[mid].ID == n.document.id {
+			return nodes[mid]
 		}
 	}
 	var (

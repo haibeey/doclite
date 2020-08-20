@@ -18,17 +18,19 @@ const (
 
 // A Btree object
 type Btree struct {
+	Name           string
 	NumDocuments   int64
-	nDocMutex      sync.Mutex
 	NumRoots       int
 	SubCollections map[string]*Btree
-	Pool           []int64         // pool of available ids
-	findPool       map[int64]int64 //in memory pool finder
-	Pages          []int64         // the pages this bree occupies
+	Pool           []int64 // pool of available ids
+	Pages          []int64 // the pages this bree occupies
 
 	roots         []*Node
 	db            *DB
 	initBtreeRoot bool
+	nDocMutex     sync.Mutex
+	findPool      map[int64]int64 //in memory pool finder
+	lenOverflow    int
 }
 
 // The Node in our btree
@@ -64,7 +66,7 @@ func (t *Btree) createNode(id int64, data []byte, isRoot bool) *Node {
 func (t *Btree) InsertSubCollection(name string) {
 	_, ok := t.SubCollections[name]
 	if !ok {
-		t.SubCollections[name] = t.db.newBtree()
+		t.SubCollections[name] = t.db.newBtree(name)
 		t.db.metadata.incCollections()
 	}
 }

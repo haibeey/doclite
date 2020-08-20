@@ -53,7 +53,7 @@ func testBtree(bt *Btree, t *testing.T) *Btree {
 }
 func TestBtree(t *testing.T) {
 	db := &DB{metadata: &Meta{}, isTesting: true}
-	bt := db.newBtree()
+	bt := db.newBtree("")
 	bt1 := testBtree(bt, t)
 
 	if bt.Get("newcollection") == nil {

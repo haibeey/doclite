@@ -26,9 +26,8 @@ type DB struct {
 	metadata     *Meta
 	rootTree     *Btree
 
-	overflows   []*overflowNode
-	lenOverflow int
-	isTesting   bool // use to indicate if we are doing unittest for the DB
+	overflows map[string][]*overflowNode
+	isTesting bool // use to indicate if we are doing unittest for the DB
 }
 
 /*Meta represent the database file metadata
@@ -78,7 +77,7 @@ func openFile(fileName string, flag int) *os.File {
 func OpenDB(fileName string) *DB {
 	if _, err := os.Stat(fileName); os.IsNotExist(err) {
 		f := openFile(fileName, os.O_RDWR|os.O_CREATE)
-		db := &DB{file: f, overflows: []*overflowNode{}}
+		db := &DB{file: f, overflows: make(map[string][]*overflowNode)}
 		db.metadata = &Meta{
 			MagicString:        []byte(magicString),
 			NofCollections:     1,
@@ -86,12 +85,12 @@ func OpenDB(fileName string) *DB {
 			RootTreeOffset:     metaDataLen,
 		}
 
-		db.rootTree = db.newBtree()
+		db.rootTree = db.newBtree("")
 		db.moveOverflow()
 		return db
 	}
 	os.Remove(fmt.Sprintf("%s.overflow", fileName))
-	db := &DB{file: openFile(fileName, os.O_RDWR)}
+	db := &DB{file: openFile(fileName, os.O_RDWR),overflows: make(map[string][]*overflowNode)}
 	db.getMeta()
 	t, err := db.initBtree()
 	if err != nil {
@@ -108,12 +107,13 @@ func (db *DB) Connect() *Btree {
 }
 
 //NewBtree returns a new Btree
-func (db *DB) newBtree() *Btree {
+func (db *DB) newBtree(name string) *Btree {
 	return &Btree{
 		db:             db,
 		SubCollections: make(map[string]*Btree),
 		findPool:       make(map[int64]int64),
 		Pages:          []int64{},
+		Name:           name,
 		initBtreeRoot:  true,
 	}
 }
@@ -187,6 +187,15 @@ func (db *DB) bringBackOverflow() error {
 	os.Remove(fmt.Sprintf("%s.overflow", db.file.Name()))
 
 	return err
+}
+
+func (db *DB)getOverflow(name string) []*overflowNode {
+	overflow,ok:=db.overflows[name]
+	if !ok{
+		db.overflows[name]=[]*overflowNode{}
+		return db.overflows[name]
+	}
+	return overflow
 }
 
 //Close closes the database must be called before at exit
