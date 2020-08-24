@@ -46,9 +46,10 @@
 	}
 	db.Close() // close the database
   ```
+  More info can be found [https://godoc.org/github.com/haibeey/doclite](https://godoc.org/github.com/haibeey/doclite)
 
   #### Contributions are welcome 
 
   #### Shared library
-  Doclite can be used with multiple programming langauges by building a shared library built on the platform specific machine using the go command ```go build -o docliteshared.so -buildmode=c-shared  docliteexport.go```.   
-  docliteexport.go can be found in the sharedlib directory. An example usage for python can found in the examples directories
+  Doclite can be used with multiple programming langauges by building a shared library built on the platform specific machine using the go command ```go build -o docliteshared.so -buildmode=c-shared  docliteexport.go```. docliteexport.go can be found in the sharedlib directory.
+An example usage for python can found in the examples directories. more details on the python package can be found [https://pypi.org/project/pydoclite/](https://pypi.org/project/pydoclite/)

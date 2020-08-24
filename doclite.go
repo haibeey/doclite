@@ -88,13 +88,13 @@ func (c *Collection) Delete(filter, doc interface{}) {
 
 /*FindOne find a document by id matching the doc struct. Example below.
 
-type Employer struct {
-	Name    string
-	Address string
-}
-e:=&Employer{}
-collection.FindOne(e)
-fmt.Println(e.name,e.address)
+	type Employer struct {
+		Name    string
+		Address string
+	}
+	e:=&Employer{}
+	collection.FindOne(e)
+	fmt.Println(e.name,e.address)
 */
 func (c *Collection) FindOne(id int64, doc interface{}) error {
 	n, err := c.tree.Find(id)
