@@ -30,7 +30,7 @@ type Btree struct {
 	initBtreeRoot bool
 	nDocMutex     sync.Mutex
 	findPool      map[int64]int64 //in memory pool finder
-	lenOverflow    int
+	lenOverflow   int
 }
 
 // The Node in our btree

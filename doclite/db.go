@@ -13,7 +13,7 @@ const (
 	metaDataLen    = 175
 	magicString    = "646f636c697465"
 	magicStringLen = 14
-	// dataSize is maximum ammount of byte to be stored on a Node.
+	// dataSize is maximum amount of byte to be stored on a Node.
 	// Excess byte would be stored in overflow pages
 	dataSize = 2048
 	pageSize = 65536
@@ -90,7 +90,7 @@ func OpenDB(fileName string) *DB {
 		return db
 	}
 	os.Remove(fmt.Sprintf("%s.overflow", fileName))
-	db := &DB{file: openFile(fileName, os.O_RDWR),overflows: make(map[string][]*overflowNode)}
+	db := &DB{file: openFile(fileName, os.O_RDWR), overflows: make(map[string][]*overflowNode)}
 	db.getMeta()
 	t, err := db.initBtree()
 	if err != nil {
@@ -189,10 +189,10 @@ func (db *DB) bringBackOverflow() error {
 	return err
 }
 
-func (db *DB)getOverflow(name string) []*overflowNode {
-	overflow,ok:=db.overflows[name]
-	if !ok{
-		db.overflows[name]=[]*overflowNode{}
+func (db *DB) getOverflow(name string) []*overflowNode {
+	overflow, ok := db.overflows[name]
+	if !ok {
+		db.overflows[name] = []*overflowNode{}
 		return db.overflows[name]
 	}
 	return overflow
@@ -200,11 +200,9 @@ func (db *DB)getOverflow(name string) []*overflowNode {
 
 //Close closes the database must be called before at exit
 func (db *DB) Close() error {
-	var err error
-
 	db.rootTree.Save()
 
-	err = db.bringBackOverflow()
+	err := db.bringBackOverflow()
 
 	data, err := json.Marshal(db.rootTree)
 	db.metadata.RootTreeSize = int64(len(data))

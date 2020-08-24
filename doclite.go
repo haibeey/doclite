@@ -56,14 +56,16 @@ func (c *Collection) Collection(collectionName string) *Collection {
 }
 
 /*Insert add a new document to the  collection and returns the id of the inserted document or an error.
-/ The id return are not binding i.e when the document is deleted another new document would take up the id.
-/ Doc is a go struct object holding some data example
+The id return are not binding i.e when the document is deleted another new document would take up the id.
+Doc is a go struct object holding some data example
+
 	type Employer struct {
 		Name    string
 		Address string
 	}
 	e:=&Employer{name:"joe",address:"doe"}
 	collection.Insert(e)
+
 */
 func (c *Collection) Insert(doc interface{}) (int64, error) {
 	buf, err := json.Marshal(doc)
@@ -106,23 +108,23 @@ func (c *Collection) FindOne(id int64, doc interface{}) error {
 }
 
 /*Find returns a cursor object containing all matching document of type doc.
- filter is of type struct or map. it use to select matching argument of type docs.
+filter is of type struct or map. it use to select matching argument of type docs.
 
-		type Employer struct {
-			Name    string
-			Address string
+	type Employer struct {
+		Name    string
+		Address string
+	}
+	e=&Employer{}
+	joe:=&Employer{Address:"doe"}
+	cur:=baseCollection.Find(joe,e)
+	for {
+		emp:=cur.Next()
+		if emp==nil{
+			fmt.Println(emp,"is nil at",i)
+			break
 		}
-		e=&Employer{}
-		joe:=&Employer{Address:"doe"}
-		cur:=baseCollection.Find(joe,e)
-		for {
-			emp:=cur.Next()
-			if emp==nil{
-				fmt.Println(emp,"is nil at",i)
-				break
-			}
-			fmt.Println(emp)
-		}
+		fmt.Println(emp)
+	}
 */
 func (c *Collection) Find(filter, doc interface{}) *doclite.Cursor {
 	return c.tree.FindAll(filter, doc)

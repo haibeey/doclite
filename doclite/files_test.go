@@ -32,7 +32,7 @@ func testFile(add int, t *testing.T) {
 	os.Remove("filetestoverflow")
 	db.file = openFile("filetest", os.O_RDWR|os.O_CREATE)
 	db.overflowfile = openFile("filetestoverflow", os.O_RDWR|os.O_CREATE)
-	db.overflows=make(map[string][]*overflowNode)
+	db.overflows = make(map[string][]*overflowNode)
 
 	for i := 1; i <= numOfInsert; i++ {
 		n := &Node{document: &Document{id: int64(i), data: data, offset: int64(i * dataSize)}}

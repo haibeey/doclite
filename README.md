@@ -50,5 +50,5 @@
   #### Contributions are welcome 
 
   #### Shared library
-  Doclite can be used with multiple programming langauges by building a shared library built on the platform specific machine using the go command ```go build -o doclite.so -buildmode=c-shared  docliteexport.go```.   
+  Doclite can be used with multiple programming langauges by building a shared library built on the platform specific machine using the go command ```go build -o docliteshared.so -buildmode=c-shared  docliteexport.go```.   
   docliteexport.go can be found in the sharedlib directory. An example usage for python can found in the examples directories
