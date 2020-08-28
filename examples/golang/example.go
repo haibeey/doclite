@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"doclite"
+	"github.com/haibeey/doclite"
 )
 func main(){
 	type Employer struct {

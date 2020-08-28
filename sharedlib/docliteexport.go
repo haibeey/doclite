@@ -3,7 +3,7 @@ package main
 import "C"
 
 import (
-	"doclite"
+	"github.com/haibeey/doclite"
 
 	"encoding/json"
 	"fmt"

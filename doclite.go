@@ -1,7 +1,7 @@
 package doclite
 
 import (
-	"doclite/doclite"
+	"github.com/haibeey/doclite/doclite"
 	"encoding/json"
 	"errors"
 )

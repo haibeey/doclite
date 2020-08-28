@@ -1,4 +1,4 @@
-module doclite
+module github.com/haibeey/doclite
 
 go 1.14
 
