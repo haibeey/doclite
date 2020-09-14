@@ -154,6 +154,10 @@ func getColFromName(name string) *doclite.Collection {
 
 	return collection
 }
+//Commit saves all current changes
+func Commit(name string){
+	getColFromName(name).Commit()
+}
 func main() {
 
 }

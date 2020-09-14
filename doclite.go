@@ -4,6 +4,7 @@ import (
 	"github.com/haibeey/doclite/doclite"
 	"encoding/json"
 	"errors"
+	"log"
 )
 
 var (
@@ -130,6 +131,11 @@ func (c *Collection) Find(filter, doc interface{}) *doclite.Cursor {
 	return c.tree.FindAll(filter, doc)
 }
 
+//Commit saves all current changes
+func (c *Collection) Commit(){
+	c.tree.Save()
+}
+
 //UpdateOneDoc is used update an existing document  by id in the database with a new document.
 func (c *Collection) UpdateOneDoc(id int64, doc interface{}) error {
 	buf, err := json.Marshal(doc)
@@ -137,4 +143,10 @@ func (c *Collection) UpdateOneDoc(id int64, doc interface{}) error {
 		return err
 	}
 	return c.tree.Update(id, buf)
+}
+
+func recoverFromFailure(){
+	if err:=recover(); err!=nil{
+		log.Println("Error occured",err)
+	}
 }
