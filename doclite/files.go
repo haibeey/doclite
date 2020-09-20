@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	demarcationbByteString = " "
-	demarcationByte        = byte(32)
+	demarcationbByteString = "`"
+	demarcationByte        = byte(96)
 )
 
 var readWriteMutex sync.Mutex
