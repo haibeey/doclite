@@ -23,6 +23,11 @@ func (d *Doclite) GetDB() *doclite.DB {
 	return d.db
 }
 
+//Commit saves all current changes on the database 
+func (d *Doclite) Commit(){
+	d.db.Save()
+}
+
 // Collection holds a collection
 type Collection struct {
 	tree *doclite.Btree

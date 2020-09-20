@@ -54,7 +54,9 @@ func main(){
 	type User struct{
 		Name string
 		Address string
+		Friends []User
 	}
+
 	//create a new collection from 
 	userCollection := baseCollection.Collection("user")
 	//Insert 20 new document
@@ -63,6 +65,9 @@ func main(){
 			&User{
 				Name: fmt.Sprintf("%d docklite %s", i,"user"),
 				Address: "20, daniel's street, Abuja",
+				Friends:[]User{
+					User{Name:fmt.Sprintf("%d testing %s", i,"user")},
+				},
 			},
 		)
 	}
@@ -84,7 +89,7 @@ func main(){
 			break
 		}
 		count++
-		fmt.Println(emp)
+		fmt.Println(emp,u.Name)
 	}
 	fmt.Println("Found ",count, "documents")
 

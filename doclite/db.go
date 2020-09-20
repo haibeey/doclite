@@ -224,8 +224,8 @@ func (db *DB) Close() error {
 	_, err = db.file.WriteAt(data, 0)
 	return err
 }
-//Commit saves all current changes on the database 
-func (db *DB)Commit() error {
+//Save saves all current changes on the database 
+func (db *DB)Save() error {
 	db.rootTree.Save()
 
 	data, err := json.Marshal(db.rootTree)
