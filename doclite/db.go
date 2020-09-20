@@ -27,7 +27,6 @@ type DB struct {
 	rootTree     *Btree
 
 	overflows map[string][]*overflowNode
-	isTesting bool // use to indicate if we are doing unittest for the DB
 }
 
 /*Meta represent the database file metadata
@@ -92,12 +91,12 @@ func OpenDB(fileName string) *DB {
 	os.Remove(fmt.Sprintf("%s.overflow", fileName))
 	db := &DB{file: openFile(fileName, os.O_RDWR), overflows: make(map[string][]*overflowNode)}
 	db.getMeta()
+	db.moveOverflow()
 	t, err := db.initBtree()
 	if err != nil {
 		fmt.Println("database might have been corrupted")
 	}
 	db.rootTree = t
-	db.moveOverflow()
 	return db
 }
 
@@ -152,7 +151,6 @@ func (db *DB) moveOverflow() error {
 	db.overflowfile = openFile(fmt.Sprintf("%s.overflow", db.file.Name()), os.O_RDWR|os.O_CREATE)
 
 	db.file.Seek(db.metadata.OverflowDataOffset, os.SEEK_SET)
-	// fmt.Println(db.metadata.OverflowSize,"what")
 	//TODO read in chucks
 	buf := make([]byte, db.metadata.OverflowSize)
 	_, err := db.file.Read(buf)

@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"fmt"
 )
 
 const (
@@ -95,9 +94,8 @@ func (c *Cache) overflowDoc(n *Node) error {
 
 	err = c.writeOverflowfile(buf)
 	c.db.metadata.OverflowSize += int64(len(buf))
-	if !c.db.isTesting {
-		c.insertOfn(ofn)
-	}
+
+	c.insertOfn(ofn)
 	return err
 }
 
@@ -140,7 +138,6 @@ func (c *Cache) getOverflowData(n *Node) *overflowNode {
 
 		x += int64(r)
 		size := int64(binary.BigEndian.Uint64(sizeBuf[:])) // convert the byte to int
-		fmt.Print(k,r,size,x,c.db.metadata.OverflowSize," ")
 		buf := make([]byte, size)
 		r, err = c.readOverflowfile(x, buf)
 		if err != nil || r == 0 {
@@ -150,7 +147,6 @@ func (c *Cache) getOverflowData(n *Node) *overflowNode {
 		ofn := &overflowNode{}
 		json.Unmarshal(buf, ofn)
 		c.insertOfn(ofn)
-		fmt.Println(ofn)
 		if n.document.id == ofn.ID {
 			return ofn
 		}

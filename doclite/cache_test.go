@@ -6,11 +6,11 @@ import (
 
 func TestCache(t *testing.T) {
 	var (
-		numOfInsert = 100
+		numOfInsert = 10
 	)
 	MaxCacheSize = 100
 	node := &Node{document: &Document{id: int64(100)}}
-	db := &DB{metadata: &Meta{}, isTesting: true}
+	db := &DB{metadata: &Meta{}}
 	c := NewCache(db, db.newBtree(""))
 	c.node = node
 	c.ids = make(map[int64]*Node)

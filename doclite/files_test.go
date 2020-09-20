@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 )
 
-var numOfInsert = 100
+var numOfInsert = 10
 
 func TestFile(t *testing.T) {
 
@@ -15,7 +15,7 @@ func TestFile(t *testing.T) {
 	defer os.Remove("filetest.overflow")
 
 	for i:=0;i<3;i++{
-		for add := -100; add <= 100; add++ {
+		for add := -10; add <= 10; add++ {
 			testFile(add, t)
 		}
 	}
