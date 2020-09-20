@@ -150,15 +150,12 @@ func (db *DB) getMeta() *Meta {
 
 func (db *DB) moveOverflow() error {
 	db.overflowfile = openFile(fmt.Sprintf("%s.overflow", db.file.Name()), os.O_RDWR|os.O_CREATE)
-	stat, err := db.overflowfile.Stat()
-	if err != nil {
-		return err
-	}
-	db.metadata.OverflowSize = stat.Size()
+
 	db.file.Seek(db.metadata.OverflowDataOffset, os.SEEK_SET)
+	// fmt.Println(db.metadata.OverflowSize,"what")
 	//TODO read in chucks
 	buf := make([]byte, db.metadata.OverflowSize)
-	_, err = db.file.Read(buf)
+	_, err := db.file.Read(buf)
 	if err != nil {
 		return err
 	}
@@ -224,6 +221,7 @@ func (db *DB) Close() error {
 	_, err = db.file.WriteAt(data, 0)
 	return err
 }
+
 //Save saves all current changes on the database 
 func (db *DB)Save() error {
 	db.rootTree.Save()

@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"encoding/json"
 )
 
 var numOfInsert = 100
@@ -29,27 +30,38 @@ func testFile(add int, t *testing.T) {
 	c.ids = make(map[int64]*Node)
 	node.children = c
 
+	type simpleStruct struct{
+		Name string
+	}
 
 	nodes := make([]*Node, 0)
-	data := []byte(strings.Repeat("F", dataSize+add))
 
 	for i := 1; i <= numOfInsert; i++ {
-		n := &Node{document: &Document{id: int64(i), data: data, offset: int64(i * dataSize)}}
-		nodes = append(nodes, n)
-		err := node.children.write(n)
+		ss:=simpleStruct{Name:strings.Repeat("F", dataSize+add)}
+		buf, err := json.Marshal(ss)
+		if err != nil {
+			continue
+		}
+		
+		n ,err:= db.rootTree.Find(db.rootTree.Insert(buf))
 		if err != nil {
 			t.Errorf("Error while writing data %v", err)
 		}
+		nodes = append(nodes, n)
+		
 	}
 
+	ss:=&simpleStruct{}
 	for i := 0; i < numOfInsert; i++ {
-		buf, err := node.children.read(nodes[i])
-		if err != nil {
-			t.Errorf("Error while reading data %v", err)
-		}
+		buf:= nodes[i].document.data
+
 		if dataSize+add-len(buf) > 1 {
 			t.Errorf("Size of data read doesn't match size of data inserted %d %d %d", len(buf), dataSize+add, add)
 			return
+		}
+		err:=json.Unmarshal(buf,ss)
+		if err!=nil{
+			t.Errorf("%s",err)
 		}
 	}
 	for i := 0; i < numOfInsert; i++ {

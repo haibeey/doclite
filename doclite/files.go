@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"fmt"
 )
 
 const (
@@ -127,24 +128,29 @@ func (c *Cache) getOverflowData(n *Node) *overflowNode {
 		sizeBuf [8]byte
 	)
 	x := int64(0)
+	k:=0
 	for {
+		k++
 		// read the first 8 byte to decode the size of the overflow data
-		w, err := c.readOverflowfile(x, sizeBuf[:])
-		if err != nil || w == 0 {
+		r, err := c.readOverflowfile(x, sizeBuf[:])
+		
+		if err != nil || r == 0 {
 			break
 		}
 
-		x += int64(w)
+		x += int64(r)
 		size := int64(binary.BigEndian.Uint64(sizeBuf[:])) // convert the byte to int
+		fmt.Print(k,r,size,x,c.db.metadata.OverflowSize," ")
 		buf := make([]byte, size)
-		w, err = c.readOverflowfile(x, buf)
-		if err != nil || w == 0 {
+		r, err = c.readOverflowfile(x, buf)
+		if err != nil || r == 0 {
 			break
 		}
 		x += size
 		ofn := &overflowNode{}
 		json.Unmarshal(buf, ofn)
 		c.insertOfn(ofn)
+		fmt.Println(ofn)
 		if n.document.id == ofn.ID {
 			return ofn
 		}

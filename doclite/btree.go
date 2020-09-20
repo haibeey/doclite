@@ -51,17 +51,6 @@ func (t *Btree) incNumDocs() {
 	t.nDocMutex.Unlock()
 }
 
-// createNode Creates a new B-tree
-func (t *Btree) createNode(id int64, data []byte, isRoot bool) *Node {
-	doc := &Document{id: id, data: data}
-	if isRoot {
-		c := NewCache(t.db, t)
-		c.node = &Node{children: c, document: doc, isRoot: isRoot}
-		return c.node
-	}
-	return &Node{document: doc}
-}
-
 // InsertSubCollection insert a newSubCollection to this btree
 func (t *Btree) InsertSubCollection(name string) {
 	_, ok := t.SubCollections[name]
@@ -104,6 +93,17 @@ func (t *Btree) diskInitBtree() {
 	for i := 0; i < len(t.Pool); i++ {
 		t.findPool[t.Pool[i]] = t.Pool[i]
 	}
+}
+
+// createNode Creates a new B-tree
+func (t *Btree) createNode(id int64, data []byte, isRoot bool) *Node {
+	doc := &Document{id: id, data: data}
+	if isRoot {
+		c := NewCache(t.db, t)
+		c.node = &Node{children: c, document: doc, isRoot: isRoot}
+		return c.node
+	}
+	return &Node{document: doc}
 }
 
 func (t *Btree) addRoot(node *Node) {
