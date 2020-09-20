@@ -131,7 +131,7 @@ func (db *DB) initBtree() (*Btree, error) {
 	}
 	err = json.Unmarshal(buf, tree)
 	if err != nil {
-		panic(err)
+		fmt.Println("an error occured while initilizing the db",err)
 	}
 
 	tree.diskInitBtree()
@@ -203,6 +203,30 @@ func (db *DB) Close() error {
 	db.rootTree.Save()
 
 	err := db.bringBackOverflow()
+
+	data, err := json.Marshal(db.rootTree)
+	db.metadata.RootTreeSize = int64(len(data))
+
+	if err != nil {
+		return err
+	}
+
+	_, err = db.file.WriteAt(data, db.metadata.RootTreeOffset)
+	if err != nil {
+		return err
+	}
+
+	data, err = bson.Marshal(db.metadata)
+
+	if err != nil {
+		return err
+	}
+	_, err = db.file.WriteAt(data, 0)
+	return err
+}
+//Commit saves all current changes on the database 
+func (db *DB)Commit() error {
+	db.rootTree.Save()
 
 	data, err := json.Marshal(db.rootTree)
 	db.metadata.RootTreeSize = int64(len(data))

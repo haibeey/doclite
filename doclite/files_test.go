@@ -11,28 +11,27 @@ var numOfInsert = 100
 func TestFile(t *testing.T) {
 
 	defer os.Remove("filetest")
-	defer os.Remove("filetestoverflow")
+	defer os.Remove("filetest.overflow")
 
-	for add := -100; add <= 100; add++ {
-		testFile(add, t)
+	for i:=0;i<3;i++{
+		for add := -100; add <= 100; add++ {
+			testFile(add, t)
+		}
 	}
+
 }
 
 func testFile(add int, t *testing.T) {
 	node := &Node{document: &Document{id: int64(100)}}
-	db := &DB{metadata: &Meta{}, isTesting: true}
-	c := NewCache(db, db.newBtree(""))
+	db := OpenDB("filetest")
+	c := NewCache(db, db.rootTree)
 	c.node = node
 	c.ids = make(map[int64]*Node)
 	node.children = c
 
+
 	nodes := make([]*Node, 0)
 	data := []byte(strings.Repeat("F", dataSize+add))
-	os.Remove("filetest")
-	os.Remove("filetestoverflow")
-	db.file = openFile("filetest", os.O_RDWR|os.O_CREATE)
-	db.overflowfile = openFile("filetestoverflow", os.O_RDWR|os.O_CREATE)
-	db.overflows = make(map[string][]*overflowNode)
 
 	for i := 1; i <= numOfInsert; i++ {
 		n := &Node{document: &Document{id: int64(i), data: data, offset: int64(i * dataSize)}}
@@ -56,4 +55,6 @@ func testFile(add int, t *testing.T) {
 	for i := 0; i < numOfInsert; i++ {
 		node.children.Delete(nodes[i].document.id)
 	}
+
+	db.Close()
 }
