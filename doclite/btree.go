@@ -217,10 +217,10 @@ func (t *Btree) Find(id int64) (*Node, error) {
 /*
 FindAll finds items in the btree matching a filter and a doc
 */
-func (t *Btree) FindAll(filter, doc interface{}) *Cursor {
+func (t *Btree) FindAll(filter interface{}) *Cursor {
 	cur := NewCur()
 	for _, node := range t.roots {
-		cur.addCacheCursor(newCacheCur(node, filter, doc))
+		cur.addCacheCursor(newCacheCur(node, filter))
 	}
 	return cur
 }

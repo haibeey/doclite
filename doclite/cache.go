@@ -160,7 +160,7 @@ func checkMatch(filter, content map[string]interface{}) bool {
 }
 
 // Find gets all nodes matching a criterions specified by filter
-func (c *Cache) Find(filter interface{}, doc interface{}, start int) ([]interface{}, int) {
+func (c *Cache) Find(filter interface{}, start int) ([]interface{}, int) {
 	countOfFound := 0
 	nodes := []interface{}{}
 	filterMap := toMap(filter)
@@ -175,13 +175,13 @@ func (c *Cache) Find(filter interface{}, doc interface{}, start int) ([]interfac
 			continue
 		}
 		buf := n.document.data
-
-		err = json.Unmarshal(buf, doc)
+		d:=make(map[string]interface{})
+		err = json.Unmarshal(buf, &d)
 
 		if err != nil {
 			continue
 		}
-		docMap := toMap(doc)
+		docMap := toMap(d)
 		if !checkMatch(filterMap, docMap) {
 			continue
 		}
@@ -192,15 +192,16 @@ func (c *Cache) Find(filter interface{}, doc interface{}, start int) ([]interfac
 	return nodes, c.node.numChildren
 }
 
-func (c *Cache) checkRootMatched(filter interface{}, doc interface{}) interface{} {
+func (c *Cache) checkRootMatched(filter interface{}) interface{} {
 	buf := c.node.document.data
 	filterMap := toMap(filter)
-	err := json.Unmarshal(buf, &doc)
+	d:=make(map[string]interface{})
+	err := json.Unmarshal(buf, &d)
 
 	if err != nil {
 		return nil
 	}
-	docMap := toMap(doc)
+	docMap := toMap(d)
 	if !checkMatch(filterMap, docMap) {
 		return nil
 	}

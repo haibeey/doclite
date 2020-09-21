@@ -13,12 +13,11 @@ type CacheCursor struct {
 	// nodes that matches the supplied filter
 	matchingNodes []interface{}
 	filter        interface{}
-	doc           interface{}
 	exhausted     int // the amount of nodes serched so far
 }
 
-func newCacheCur(root *Node, filter interface{}, doc interface{}) *CacheCursor {
-	docMatched := root.children.checkRootMatched(filter, doc)
+func newCacheCur(root *Node, filter interface{}) *CacheCursor {
+	docMatched := root.children.checkRootMatched(filter)
 	matchingNodes := []interface{}{}
 	if docMatched != nil {
 		matchingNodes = append(matchingNodes, docMatched)
@@ -27,7 +26,6 @@ func newCacheCur(root *Node, filter interface{}, doc interface{}) *CacheCursor {
 		rootNode:      root,
 		matchingNodes: matchingNodes,
 		filter:        filter,
-		doc:           doc,
 	}
 }
 
@@ -38,7 +36,7 @@ func (cc *CacheCursor) renew() {
 
 func (cc *CacheCursor) next() interface{} {
 	if len(cc.matchingNodes) <= lookAheadNodeSize {
-		nodes, exhausted := cc.rootNode.children.Find(cc.filter, cc.doc, cc.exhausted)
+		nodes, exhausted := cc.rootNode.children.Find(cc.filter, cc.exhausted)
 		cc.exhausted = exhausted
 		cc.matchingNodes = append(cc.matchingNodes, nodes...)
 	}

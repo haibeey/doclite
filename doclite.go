@@ -137,8 +137,8 @@ filter is of type struct or map. it use to select matching argument of type docs
 		fmt.Println(emp)
 	}
 */
-func (c *Collection) Find(filter, doc interface{}) *doclite.Cursor {
-	return c.tree.FindAll(filter, doc)
+func (c *Collection) Find(filter interface{}) *doclite.Cursor {
+	return c.tree.FindAll(filter)
 }
 
 //Commit saves all current changes
