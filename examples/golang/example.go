@@ -89,7 +89,7 @@ func main(){
 			break
 		}
 		count++
-		fmt.Println(emp,u.Name)
+		fmt.Println(u.Name)
 	}
 	fmt.Println("Found ",count, "documents")
 

@@ -176,7 +176,7 @@ func (c *Cache) Find(filter interface{}, doc interface{}, start int) ([]interfac
 		}
 		buf := n.document.data
 
-		err = json.Unmarshal(buf, &doc)
+		err = json.Unmarshal(buf, doc)
 
 		if err != nil {
 			continue

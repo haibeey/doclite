@@ -1,9 +1,9 @@
 package doclite
 
 import (
-	"github.com/haibeey/doclite/doclite"
 	"encoding/json"
 	"errors"
+	"github.com/haibeey/doclite/doclite"
 	"log"
 )
 
@@ -23,8 +23,8 @@ func (d *Doclite) GetDB() *doclite.DB {
 	return d.db
 }
 
-//Commit saves all current changes on the database 
-func (d *Doclite) Commit(){
+//Commit saves all current changes on the database
+func (d *Doclite) Commit() {
 	d.db.Save()
 }
 
@@ -61,6 +61,11 @@ func (c *Collection) Collection(collectionName string) *Collection {
 	return &Collection{tree: c.tree.Get(collectionName)}
 }
 
+//Name returns the name of the sub collection
+func (c *Collection) Name() string {
+	return c.tree.Name
+}
+
 /*Insert add a new document to the  collection and returns the id of the inserted document or an error.
 The id return are not binding i.e when the document is deleted another new document would take up the id.
 Doc is a go struct object holding some data example
@@ -94,13 +99,13 @@ func (c *Collection) Delete(filter, doc interface{}) {
 
 /*FindOne find a document by id matching the doc struct. Example below.
 
-	type Employer struct {
-		Name    string
-		Address string
-	}
-	e:=&Employer{}
-	collection.FindOne(e)
-	fmt.Println(e.name,e.address)
+type Employer struct {
+	Name    string
+	Address string
+}
+e:=&Employer{}
+collection.FindOne(e)
+fmt.Println(e.name,e.address)
 */
 func (c *Collection) FindOne(id int64, doc interface{}) error {
 	n, err := c.tree.Find(id)
@@ -137,7 +142,7 @@ func (c *Collection) Find(filter, doc interface{}) *doclite.Cursor {
 }
 
 //Commit saves all current changes
-func (c *Collection) Commit(){
+func (c *Collection) Commit() {
 	c.tree.Save()
 }
 
@@ -150,8 +155,8 @@ func (c *Collection) UpdateOneDoc(id int64, doc interface{}) error {
 	return c.tree.Update(id, buf)
 }
 
-func recoverFromFailure(){
-	if err:=recover(); err!=nil{
-		log.Println("Error occured",err)
+func recoverFromFailure() {
+	if err := recover(); err != nil {
+		log.Println("Error occured", err)
 	}
 }

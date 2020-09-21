@@ -1,6 +1,7 @@
 package doclite
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -27,11 +28,28 @@ func findAll(col *Collection, t *testing.T, expectedCount int) {
 	joe := &Employer{Address: "doe"}
 	cur := col.Find(joe, e)
 	count := 0
+	eeTest := &Employer{}
 	for {
 		emp := cur.Next()
 		if emp == nil {
 			break
 		}
+
+		b, err := json.Marshal(emp)
+		if err != nil {
+			t.Errorf("error while parsing json %s", err)
+		}
+		ee := &Employer{}
+		err = json.Unmarshal(b, ee)
+
+		if err != nil {
+			t.Errorf("error while parsing json %s", err)
+		}
+		if eeTest.Name == ee.Name {
+			t.Errorf("error: db is returing same values %v %v", e, ee)
+		}
+
+		eeTest.Name = ee.Name
 		count++
 	}
 	if count != expectedCount {
