@@ -23,7 +23,7 @@ func TestMain(t *testing.T) {
 
 }
 
-func findAll(col *Collection, t *testing.T, expectedCount int,address string) {
+func findAll(col *Collection, t *testing.T, expectedCount int, address string) {
 	e := &Employer{}
 	joe := &Employer{Address: address}
 	cur := col.Find(joe)
@@ -53,15 +53,15 @@ func findAll(col *Collection, t *testing.T, expectedCount int,address string) {
 		count++
 	}
 	if count != expectedCount {
-		t.Errorf("%d doesn't match expected count of %d %s", count, expectedCount,address)
+		t.Errorf("%d doesn't match expected count of %d %s", count, expectedCount, address)
 	}
 }
 
 func testCollection(col *Collection, t *testing.T) {
 	//insert 20 elements
 	for i := 0; i < 20; i++ {
-		address:="doe"
-		if i>=10{
+		address := "doe"
+		if i >= 10 {
 			address = fmt.Sprintf("%d doe", i+1)
 		}
 		e := &Employer{Name: fmt.Sprintf("%d docklite", i), Address: address}
@@ -82,7 +82,7 @@ func testCollection(col *Collection, t *testing.T) {
 		t.Errorf("failed to find document with id %d", 17)
 	}
 	//find all element in
-	findAll(col, t, 10,"doe")
+	findAll(col, t, 10, "doe")
 	e = &Employer{}
 	//delete document with id 16
 	col.DeleteOne(6)
@@ -93,15 +93,15 @@ func testCollection(col *Collection, t *testing.T) {
 	}
 	// find all document but exepecting number of document to be 16
 	// since we deleted one element already
-	findAll(col, t, 9,"doe")
+	findAll(col, t, 9, "doe")
 
-	for i:=11;i<=20;i++{
-		findAll(col,t,1,fmt.Sprintf("%d doe", i))
+	for i := 11; i <= 20; i++ {
+		findAll(col, t, 1, fmt.Sprintf("%d doe", i))
 	}
 
 	col.Delete(&Employer{Address: "doe"}, &Employer{})
 
 	// find all document but exepecting number of document to be 0
 	// since we deleted one element already
-	findAll(col, t, 0,"doe")
+	findAll(col, t, 0, "doe")
 }
