@@ -25,16 +25,16 @@ func ConvertToStruct(m map[string]interface{}, s interface{}) error {
 		structFieldValue := structValue.FieldByName(name)
 
 		if !structFieldValue.IsValid() {
-			return fmt.Errorf("No such field: %s in obj", name)
+			return fmt.Errorf("no such field: %s in obj", name)
 		}
 
 		if !structFieldValue.CanSet() {
-			return fmt.Errorf("Cannot set %s field value", name)
+			return fmt.Errorf("cannot set %s field value", name)
 		}
 
 		val := reflect.ValueOf(value)
 		if structFieldValue.Type() != val.Type() {
-			return fmt.Errorf("Provided value type didn't match obj field type")
+			return fmt.Errorf("provided value type didn't match obj field type")
 		}
 
 		structFieldValue.Set(val)
@@ -68,7 +68,7 @@ func Insert(doc, name string) {
 	document := make(map[string]interface{})
 	err := json.Unmarshal([]byte(doc), &document)
 	if err != nil {
-
+		return
 	}
 	collection.Insert(document)
 }
@@ -116,9 +116,8 @@ func Find(name, filter string) *C.char {
 	if err != nil {
 		return C.CString("")
 	}
-	doc := make(map[string]interface{})
 	collection := getColFromName(name)
-	cur := collection.GetCol().FindAll(filterMap, doc)
+	cur := collection.GetCol().FindAll(filterMap)
 	result := make([]interface{}, 0)
 	for {
 		next := cur.Next()

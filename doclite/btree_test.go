@@ -3,14 +3,10 @@ package doclite
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 )
 
-var (
-	randGen = rand.New(rand.NewSource(time.Now().UnixNano()))
-)
+
 
 func testBtree(bt *Btree, t *testing.T) *Btree {
 	var (
@@ -84,7 +80,7 @@ func TestBinarySearch(t *testing.T) {
 		}
 	}
 
-	list := []*Node{&Node{document: &Document{id: 1, data: []byte{}}}, &Node{document: &Document{id: 33, data: []byte{}}}, &Node{document: &Document{id: 65, data: []byte{}}}, &Node{document: &Document{id: 97, data: []byte{}}}}
+	list := []*Node{{document: &Document{id: 1, data: []byte{}}}, {document: &Document{id: 33, data: []byte{}}}, {document: &Document{id: 65, data: []byte{}}}, {document: &Document{id: 97, data: []byte{}}}}
 
 	if indexOfNodes(int64(3), list, 4) != 0 {
 		t.Errorf(" wrong node")

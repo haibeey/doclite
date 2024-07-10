@@ -18,7 +18,6 @@ type Document struct {
 	id        int64
 	data      []byte
 	offset    int64 // the seek pos for this data on disk
-	dirty     bool
 	isDeleted bool
 }
 
@@ -97,7 +96,7 @@ func (c *Cache) remove(n *Node) error { //slow
 		c.nodes.PopBack()
 		return nil
 	}
-	return errors.New("Not Found")
+	return errors.New("not Found")
 }
 
 func (c *Cache) get(id int64) (*Node, error) {
@@ -161,6 +160,12 @@ func checkMatch(filter, content map[string]interface{}) bool {
 
 // Find gets all nodes matching a criterions specified by filter
 func (c *Cache) Find(filter interface{}, start int) ([]interface{}, int) {
+	d:=make(map[string]interface{})
+	return c.FindNodes(filter,d,start)
+}
+
+// Find gets all nodes matching a criterions specified by filter
+func (c *Cache) FindNodes(filter,object interface{}, start int) ([]interface{}, int) {
 	countOfFound := 0
 	nodes := []interface{}{}
 	filterMap := toMap(filter)
@@ -174,19 +179,19 @@ func (c *Cache) Find(filter interface{}, start int) ([]interface{}, int) {
 		if n == nil || err != nil {
 			continue
 		}
-		buf := n.document.data
-		d:=make(map[string]interface{})
-		err = json.Unmarshal(buf, &d)
+		buf := n.document.data		
+		err = json.Unmarshal(buf, &object)
 
 		if err != nil {
 			continue
 		}
-		docMap := toMap(d)
+
+		docMap := toMap(object)
 		if !checkMatch(filterMap, docMap) {
 			continue
 		}
 
-		nodes = append(nodes, docMap)
+		nodes = append(nodes, object)
 	}
 
 	return nodes, c.node.numChildren

@@ -198,6 +198,9 @@ func (db *DB) Close() error {
 	db.rootTree.Save()
 
 	err := db.bringBackOverflow()
+	if err != nil{
+		return err
+	}
 
 	data, err := json.Marshal(db.rootTree)
 	db.metadata.RootTreeSize = int64(len(data))

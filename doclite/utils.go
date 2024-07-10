@@ -61,26 +61,6 @@ func indexOfOfn(key int64, nodes []*overflowNode, nodesLen int) int {
 	return mid
 }
 
-func min(a, b int) int {
-	if a > b {
-		return b
-	}
-	return a
-}
-
-func minInt64(a, b int64) int64 {
-	if a > b {
-		return b
-	}
-	return a
-}
-
-func max(a, b int) int {
-	if a < b {
-		return b
-	}
-	return a
-}
 
 func maxInt64(a, b int64) int64 {
 	if a < b {
