@@ -126,12 +126,12 @@ func (c *Cache) getOverflowData(n *Node) *overflowNode {
 		sizeBuf [8]byte
 	)
 	x := int64(0)
-	k:=0
+	k := 0
 	for {
 		k++
 		// read the first 8 byte to decode the size of the overflow data
 		r, err := c.readOverflowfile(x, sizeBuf[:])
-		
+
 		if err != nil || r == 0 {
 			break
 		}

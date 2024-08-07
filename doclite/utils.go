@@ -61,7 +61,6 @@ func indexOfOfn(key int64, nodes []*overflowNode, nodesLen int) int {
 	return mid
 }
 
-
 func maxInt64(a, b int64) int64 {
 	if a < b {
 		return b

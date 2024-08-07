@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-
-
 func testBtree(bt *Btree, t *testing.T) *Btree {
 	var (
 		numOfInsert = 100

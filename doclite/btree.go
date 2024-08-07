@@ -281,7 +281,7 @@ func (n *Node) save() {
 	n.children.Save()
 }
 
-//Doc returns the document for a node
+// Doc returns the document for a node
 func (n *Node) Doc() *Document {
 	return n.document
 }

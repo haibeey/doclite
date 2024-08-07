@@ -21,7 +21,7 @@ type Document struct {
 	isDeleted bool
 }
 
-//Data returns the conataining byte of a document for decoding
+// Data returns the conataining byte of a document for decoding
 func (d *Document) Data() []byte {
 	return d.data
 }
@@ -51,14 +51,14 @@ type Cache struct {
 	tree            *Btree
 }
 
-//NewCache initilize a new cache
+// NewCache initilize a new cache
 func NewCache(db *DB, tree *Btree) *Cache {
-	c := &Cache{db: db, tree: tree}
+	c := &Cache{db: db, tree: tree, nodes: deque.Deque{}}
 	c.ids = make(map[int64]*Node)
 	return c
 }
 
-//Add insert a new item into this cache
+// Add insert a new item into this cache
 func (c *Cache) Add(n *Node) {
 	_, ok := c.ids[n.document.id]
 	if !ok {
@@ -125,7 +125,7 @@ func (c *Cache) get(id int64) (*Node, error) {
 	return n, err
 }
 
-//Delete remove item into this cache
+// Delete remove item into this cache
 func (c *Cache) Delete(id int64) {
 	if id == c.node.document.id {
 		c.node.document.data = []byte("deleted")
@@ -160,12 +160,12 @@ func checkMatch(filter, content map[string]interface{}) bool {
 
 // Find gets all nodes matching a criterions specified by filter
 func (c *Cache) Find(filter interface{}, start int) ([]interface{}, int) {
-	d:=make(map[string]interface{})
-	return c.FindNodes(filter,d,start)
+	d := make(map[string]interface{})
+	return c.FindNodes(filter, d, start)
 }
 
 // Find gets all nodes matching a criterions specified by filter
-func (c *Cache) FindNodes(filter,object interface{}, start int) ([]interface{}, int) {
+func (c *Cache) FindNodes(filter, object interface{}, start int) ([]interface{}, int) {
 	countOfFound := 0
 	nodes := []interface{}{}
 	filterMap := toMap(filter)
@@ -179,7 +179,7 @@ func (c *Cache) FindNodes(filter,object interface{}, start int) ([]interface{}, 
 		if n == nil || err != nil {
 			continue
 		}
-		buf := n.document.data		
+		buf := n.document.data
 		err = json.Unmarshal(buf, &object)
 
 		if err != nil {
@@ -200,7 +200,7 @@ func (c *Cache) FindNodes(filter,object interface{}, start int) ([]interface{}, 
 func (c *Cache) checkRootMatched(filter interface{}) interface{} {
 	buf := c.node.document.data
 	filterMap := toMap(filter)
-	d:=make(map[string]interface{})
+	d := make(map[string]interface{})
 	err := json.Unmarshal(buf, &d)
 
 	if err != nil {
@@ -213,7 +213,7 @@ func (c *Cache) checkRootMatched(filter interface{}) interface{} {
 	return docMap
 }
 
-//DeleteAll deletes all document matching filter
+// DeleteAll deletes all document matching filter
 func (c *Cache) DeleteAll(filter interface{}, doc interface{}) []int64 {
 	filterMap := toMap(filter)
 	ids := make([]int64, 0)

@@ -29,13 +29,15 @@ type DB struct {
 	overflows map[string][]*overflowNode
 }
 
-/*Meta represent the database file metadata
-  magic string is used to idenitify the database file
-  number of collection in this database
-  offset overflow bytes offset
-  number of overflow doc
-  number of overflow data
-  offset of the root btree
+/*
+Meta represent the database file metadata
+
+	magic string is used to idenitify the database file
+	number of collection in this database
+	offset overflow bytes offset
+	number of overflow doc
+	number of overflow data
+	offset of the root btree
 */
 type Meta struct {
 	MagicString        []byte
@@ -105,7 +107,7 @@ func (db *DB) Connect() *Btree {
 	return db.rootTree
 }
 
-//NewBtree returns a new Btree
+// NewBtree returns a new Btree
 func (db *DB) newBtree(name string) *Btree {
 	return &Btree{
 		db:             db,
@@ -130,7 +132,7 @@ func (db *DB) initBtree() (*Btree, error) {
 	}
 	err = json.Unmarshal(buf, tree)
 	if err != nil {
-		fmt.Println("an error occured while initilizing the db",err)
+		fmt.Println("an error occured while initilizing the db", err)
 	}
 
 	tree.diskInitBtree()
@@ -193,12 +195,12 @@ func (db *DB) getOverflow(name string) []*overflowNode {
 	return overflow
 }
 
-//Close closes the database must be called before at exit
+// Close closes the database must be called before at exit
 func (db *DB) Close() error {
 	db.rootTree.Save()
 
 	err := db.bringBackOverflow()
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -223,8 +225,8 @@ func (db *DB) Close() error {
 	return err
 }
 
-//Save saves all current changes on the database 
-func (db *DB)Save() error {
+// Save saves all current changes on the database
+func (db *DB) Save() error {
 	db.rootTree.Save()
 
 	data, err := json.Marshal(db.rootTree)

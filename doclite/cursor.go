@@ -1,11 +1,11 @@
 package doclite
 
-
 const (
 	lookAheadNodeSize = 30
 )
 
-//CacheCursor object supplies matching Nodes for a search
+// CacheCursor object supplies matching Nodes for a search
+//
 //export CacheCursor
 type CacheCursor struct {
 	rootNode *Node
@@ -28,7 +28,6 @@ func newCacheCur(root *Node, filter interface{}) *CacheCursor {
 	}
 }
 
-
 func (cc *CacheCursor) next() interface{} {
 	if len(cc.matchingNodes) <= lookAheadNodeSize {
 		nodes, exhausted := cc.rootNode.children.Find(cc.filter, cc.exhausted)
@@ -46,7 +45,7 @@ func (cc *CacheCursor) next() interface{} {
 
 func (cc *CacheCursor) nextWithObject(object interface{}) interface{} {
 	if len(cc.matchingNodes) <= lookAheadNodeSize {
-		nodes, exhausted := cc.rootNode.children.FindNodes(cc.filter,object, cc.exhausted)
+		nodes, exhausted := cc.rootNode.children.FindNodes(cc.filter, object, cc.exhausted)
 		cc.exhausted = exhausted
 		cc.matchingNodes = append(cc.matchingNodes, nodes...)
 	}
@@ -59,20 +58,20 @@ func (cc *CacheCursor) nextWithObject(object interface{}) interface{} {
 	return doc
 }
 
-
-//Cursor object supplies matching Nodes for a search
+// Cursor object supplies matching Nodes for a search
+//
 //export Cursor
 type Cursor struct {
 	cacheCursors       []*CacheCursor
 	servingCacheCursor *CacheCursor
 }
 
-//NewCur returns a new Cursor object
+// NewCur returns a new Cursor object
 func NewCur() *Cursor {
 	return &Cursor{cacheCursors: []*CacheCursor{}}
 }
 
-//Next return the next matching node of filter
+// Next return the next matching node of filter
 func (c *Cursor) Next() interface{} {
 	if len(c.cacheCursors) <= 0 {
 		return nil
@@ -88,7 +87,7 @@ func (c *Cursor) Next() interface{} {
 	return doc
 }
 
-//NextObject return the next matching node of filter
+// NextObject return the next matching node of filter
 func (c *Cursor) NextObject(object interface{}) interface{} {
 	if len(c.cacheCursors) <= 0 {
 		return nil

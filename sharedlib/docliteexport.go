@@ -11,13 +11,14 @@ import (
 	"strings"
 )
 
-//variables holding shared libraries object
+// variables holding shared libraries object
 var (
 	externalDB     *doclite.Doclite
 	baseCollection *doclite.Collection
 )
 
-//ConvertToStruct converts a map to an struct passed as s
+// ConvertToStruct converts a map to an struct passed as s
+//
 //export ConvertToStruct
 func ConvertToStruct(m map[string]interface{}, s interface{}) error {
 	structValue := reflect.ValueOf(s).Elem()
@@ -42,26 +43,30 @@ func ConvertToStruct(m map[string]interface{}, s interface{}) error {
 	return nil
 }
 
-//ConnectDB is same as Connect only used for building shared library
+// ConnectDB is same as Connect only used for building shared library
+//
 //export ConnectDB
 func ConnectDB(filename string) {
 	externalDB = doclite.Connect(filename)
 	Base()
 }
 
-//Close is same as Doclite.Close only used for building shared library
+// Close is same as Doclite.Close only used for building shared library
+//
 //export Close
 func Close() {
 	externalDB.GetDB().Close()
 }
 
-//Base is same as Doclite.Base only used for building shared library
+// Base is same as Doclite.Base only used for building shared library
+//
 //export Base
 func Base() {
 	baseCollection = externalDB.Base()
 }
 
-//Insert is same as Collection.Insert only used for building shared library
+// Insert is same as Collection.Insert only used for building shared library
+//
 //export Insert
 func Insert(doc, name string) {
 	collection := getColFromName(name)
@@ -73,28 +78,31 @@ func Insert(doc, name string) {
 	collection.Insert(document)
 }
 
-//DeleteOne is same as Collection.DeleteOne only used for building shared library
+// DeleteOne is same as Collection.DeleteOne only used for building shared library
+//
 //export DeleteOne
 func DeleteOne(id int64, name string) {
 	collection := getColFromName(name)
 	collection.DeleteOne(id)
 }
 
-//Delete is same as Collection.Delete only used for building shared library
+// Delete is same as Collection.Delete only used for building shared library
+//
 //export Delete
 func Delete(name, filter string) {
 	filterMap := make(map[string]interface{})
 	err := json.Unmarshal([]byte(filter), &filterMap)
-	if err!=nil{
+	if err != nil {
 		return
 	}
-	
+
 	doc := make(map[string]interface{})
 	collection := getColFromName(name)
 	collection.GetCol().DeleteAll(filterMap, doc)
 }
 
-//FindOne is same as Collection.FindOne only used for building shared library
+// FindOne is same as Collection.FindOne only used for building shared library
+//
 //export FindOne
 func FindOne(id int64, name string) *C.char {
 	collection := getColFromName(name)
@@ -108,7 +116,8 @@ func FindOne(id int64, name string) *C.char {
 	return C.CString(string(n.Doc().Data()))
 }
 
-//Find is same as Collection.Find only used for building shared library
+// Find is same as Collection.Find only used for building shared library
+//
 //export Find
 func Find(name, filter string) *C.char {
 	filterMap := make(map[string]interface{})
@@ -134,7 +143,8 @@ func Find(name, filter string) *C.char {
 	return C.CString(string(res))
 }
 
-//UpdateOneDoc is same as Collection.UpdateOneDoc only used for building shared library
+// UpdateOneDoc is same as Collection.UpdateOneDoc only used for building shared library
+//
 //export UpdateOneDoc
 func UpdateOneDoc(id int64, doc string, name string) {
 	collection := getColFromName(name)
@@ -153,8 +163,9 @@ func getColFromName(name string) *doclite.Collection {
 
 	return collection
 }
-//Commit saves all current changes
-func Commit(name string){
+
+// Commit saves all current changes
+func Commit(name string) {
 	getColFromName(name).Commit()
 }
 func main() {
