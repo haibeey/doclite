@@ -46,14 +46,14 @@ type Cache struct {
 	node            *Node // root node owning this cache
 	db              *DB
 	currentCapacity int
-	nodes           deque.Deque
+	nodes           deque.Deque[*Node]
 	ids             map[int64]*Node
 	tree            *Btree
 }
 
 // NewCache initilize a new cache
 func NewCache(db *DB, tree *Btree) *Cache {
-	c := &Cache{db: db, tree: tree, nodes: deque.Deque{}}
+	c := &Cache{db: db, tree: tree, nodes: deque.Deque[*Node]{}}
 	c.ids = make(map[int64]*Node)
 	return c
 }
@@ -63,7 +63,7 @@ func (c *Cache) Add(n *Node) {
 	_, ok := c.ids[n.document.id]
 	if !ok {
 		if c.currentCapacity == MaxCacheSize {
-			docToRemove := c.nodes.PopBack().(*Node)
+			docToRemove := c.nodes.PopBack()
 			delete(c.ids, docToRemove.document.id)
 			c.write(docToRemove)
 			c.currentCapacity--
@@ -79,13 +79,13 @@ func (c *Cache) Add(n *Node) {
 func (c *Cache) remove(n *Node) error { //slow
 	var i int
 	for i = 0; i < c.nodes.Len(); i++ {
-		node := c.nodes.At(i).(*Node)
+		node := c.nodes.At(i)
 		if n.document.id == node.document.id {
 			break
 		}
 	}
 
-	if i == 0 && c.nodes.At(i).(*Node) == n {
+	if i == 0 && c.nodes.At(i) == n {
 		c.nodes.PopFront()
 		c.currentCapacity--
 		return nil
@@ -240,6 +240,6 @@ func (c *Cache) DeleteAll(filter interface{}, doc interface{}) []int64 {
 func (c *Cache) Save() {
 	c.write(c.node)
 	for i := 0; i < c.nodes.Len(); i++ {
-		c.write(c.nodes.At(i).(*Node))
+		c.write(c.nodes.At(i))
 	}
 }
