@@ -13,7 +13,10 @@ type Employer struct {
 }
 
 func TestMain(t *testing.T) {
-	db := Connect("doclitetest.doclite")
+	db, err := Connect("doclitetest.doclite")
+	if err != nil {
+		t.Fatalf("failed to connect to database: %v", err)
+	}
 	baseCollection := db.Base()
 	testCollection(baseCollection, t)
 	col := baseCollection.Collection("sub")

@@ -16,6 +16,10 @@ const (
 	BtreeMaxSize = 10000000
 )
 
+// ErrTreeFull is returned by Insert when the B-tree has reached the configured
+// maximum number of entries (BtreeMaxSize) and no more documents can be added.
+var ErrTreeFull = errors.New("btree: maximum size reached, cannot insert")
+
 // A Btree object
 type Btree struct {
 	Name           string
@@ -26,6 +30,7 @@ type Btree struct {
 	Pages          []int64 // the pages this bree occupies
 
 	roots         []*Node
+
 	db            *DB
 	initBtreeRoot bool
 	nDocMutex     sync.Mutex
@@ -84,9 +89,14 @@ func (t *Btree) diskInitBtree() {
 		node := t.createNode(maxInt64(int64(i)*MinKeys, 1), data, true)
 		node.document.offset = t.Pages[i] * pageSize
 		node.document.data, _ = node.children.read(node)
-		node.numChildren = MinKeys
+
+		node.numChildren = MinKeys - 1
 		if i+1 == t.NumRoots {
-			node.numChildren = int(t.NumDocuments % int64(MinKeys))
+			// For the last root, numChildren = total docs in this root minus 1 (the root itself)
+			node.numChildren = int(t.NumDocuments - int64(i)*MinKeys) - 1
+			if node.numChildren < 0 {
+				node.numChildren = MinKeys - 1
+			}
 		}
 		t.roots = append(t.roots, node)
 	}
@@ -115,15 +125,23 @@ func (t *Btree) addRoot(node *Node) {
 	t.db.metadata.OverflowDataOffset = maxInt64(node.document.offset+pageSize, t.db.metadata.OverflowDataOffset)
 }
 
-// Insert an item into the btree with the specified key
-func (t *Btree) Insert(data []byte) int64 {
-	id := t.NumDocuments + 1
+// Insert an item into the btree with the specified key.
+// Returns the ID of the inserted document, or -1 and ErrTreeFull if the
+// B-tree has reached its maximum configured size (BtreeMaxSize).
+func (t *Btree) Insert(data []byte) (int64, error) {
 	lp := len(t.Pool)
 	fromPool := false
+	var id int64
 	if lp > 0 {
 		id = t.Pool[lp-1]
 		t.Pool = t.Pool[:lp-1]
 		fromPool = true
+	} else {
+		// Only enforce BtreeMaxSize for fresh inserts, not pool-based reuse
+		if t.NumDocuments >= BtreeMaxSize {
+			return -1, ErrTreeFull
+		}
+		id = t.NumDocuments + 1
 	}
 	node := t.createNode(id, data, true)
 	if t.NumDocuments == 0 {
@@ -131,7 +149,13 @@ func (t *Btree) Insert(data []byte) int64 {
 	} else {
 		if (id-1)%MinKeys == 0 {
 			if fromPool {
-				t.Update(id, data)
+				existingNode, err := t.Find(id)
+				if err != nil {
+					// Root for this ID no longer exists; recreate it
+					t.addRoot(node)
+				} else {
+					existingNode.document.data = data
+				}
 			} else {
 				t.addRoot(node)
 			}
@@ -139,7 +163,7 @@ func (t *Btree) Insert(data []byte) int64 {
 			node.isRoot = false
 			nodeToInsert, err := t.findFitingNode(id)
 			if err != nil {
-				return -1
+				return -1, err
 			}
 			node.document.offset = nodeToInsert.document.offset + int64(dataSize*((id-1)%MinKeys))
 			nodeToInsert.insertNonFull(node)
@@ -152,7 +176,7 @@ func (t *Btree) Insert(data []byte) int64 {
 	if !fromPool {
 		t.incNumDocs()
 	}
-	return id
+	return id, nil
 }
 
 // returns the best fitted leafs parent node to insert this id in terms of best pos
@@ -183,13 +207,13 @@ func (t *Btree) Delete(id int64) {
 
 // InsertOrUpdate update an item in the btree with the specified key if found
 // insert it with a new id if found
-func (t *Btree) InsertOrUpdate(id int64, data []byte) int64 {
+func (t *Btree) InsertOrUpdate(id int64, data []byte) (int64, error) {
 	node, err := t.Find(id)
 	if err != nil {
 		return t.Insert(data)
 	}
 	node.document.data = data
-	return id
+	return id, nil
 }
 
 // Update an item into the btree with the specified key

@@ -3,8 +3,9 @@ package doclite
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gammazero/deque"
 	"reflect"
+
+	"github.com/gammazero/deque"
 )
 
 var (
@@ -164,7 +165,9 @@ func (c *Cache) Find(filter interface{}, start int) ([]interface{}, int) {
 	return c.FindNodes(filter, d, start)
 }
 
-// Find gets all nodes matching a criterions specified by filter
+// FindNodes gets all nodes matching a criterions specified by filter.
+// Each element in the returned slice is an independent object — no two
+// elements share the same underlying pointer.
 func (c *Cache) FindNodes(filter, object interface{}, start int) ([]interface{}, int) {
 	countOfFound := 0
 	nodes := []interface{}{}
@@ -180,18 +183,30 @@ func (c *Cache) FindNodes(filter, object interface{}, start int) ([]interface{},
 			continue
 		}
 		buf := n.document.data
-		err = json.Unmarshal(buf, &object)
 
-		if err != nil {
+		// Unmarshal into a fresh map for match checking.
+		var doc map[string]interface{}
+		if err := json.Unmarshal(buf, &doc); err != nil {
 			continue
 		}
 
-		docMap := toMap(object)
-		if !checkMatch(filterMap, docMap) {
+		if !checkMatch(filterMap, doc) {
 			continue
 		}
 
-		nodes = append(nodes, object)
+		// If object is a pointer to a struct, unmarshal into a fresh copy
+		// of that type so each result is independently populated.
+		if object != nil {
+			objType := reflect.TypeOf(object)
+			if objType.Kind() == reflect.Ptr {
+				newObj := reflect.New(objType.Elem()).Interface()
+				if err := json.Unmarshal(buf, newObj); err == nil {
+					nodes = append(nodes, newObj)
+					continue
+				}
+			}
+		}
+		nodes = append(nodes, doc)
 	}
 
 	return nodes, c.node.numChildren
@@ -217,7 +232,18 @@ func (c *Cache) checkRootMatched(filter interface{}) interface{} {
 func (c *Cache) DeleteAll(filter interface{}, doc interface{}) []int64 {
 	filterMap := toMap(filter)
 	ids := make([]int64, 0)
-	for i := 0; i <= c.node.numChildren; i++ {
+
+	// Check the root node for a match (consistent with Find via checkRootMatched)
+	rootBuf := c.node.document.data
+	rootDoc := make(map[string]interface{})
+	if err := json.Unmarshal(rootBuf, &rootDoc); err == nil {
+		if checkMatch(filterMap, toMap(rootDoc)) {
+			c.Delete(c.node.document.id)
+			ids = append(ids, c.node.document.id)
+		}
+	}
+
+	for i := 1; i <= c.node.numChildren; i++ {
 		n, err := c.get(c.node.document.id + int64(i))
 		if n == nil || err != nil {
 			continue
