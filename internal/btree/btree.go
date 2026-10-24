@@ -233,12 +233,23 @@ func (t *Tree) Put(key, value []byte) error {
 	if err != nil {
 		return err
 	}
-	n := decode(b)
 	i, found := searchLeaf(b, key)
 	v, err := t.makeVal(key, value)
 	if err != nil {
 		return err
 	}
+	t.ver++
+	if !found {
+		wb, err := t.w.PageForWrite(path[len(path)-1].pg)
+		if err != nil {
+			return err
+		}
+		if insertLeafCell(wb, i, key, v) {
+			return nil
+		}
+		b = wb
+	}
+	n := decode(b)
 	if found {
 		if err := t.freeVal(n.vals[i]); err != nil {
 			return err
@@ -248,7 +259,6 @@ func (t *Tree) Put(key, value []byte) error {
 		n.keys = insertAt(n.keys, i, clone(key))
 		n.vals = insertAt(n.vals, i, v)
 	}
-	t.ver++
 	return t.store(path, len(path)-1, n)
 }
 

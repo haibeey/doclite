@@ -139,27 +139,53 @@ func (n *node) encode(b []byte) {
 		le.PutUint32(b[4:], uint32(n.kids[len(n.keys)]))
 	}
 	le.PutUint16(b[2:], uint16(len(n.keys)))
-	o := pageHeader + 2*len(n.keys)
+	// Cells fill the page from the end, so that a new slot and a new
+	// cell can be added without moving the other cells.
+	o := len(b) - trailerSize
 	for i, k := range n.keys {
-		le.PutUint16(b[pageHeader+2*i:], uint16(o))
 		if n.leaf {
-			v := n.vals[i]
-			le.PutUint16(b[o:], uint16(len(k)))
-			vl := uint32(len(v.data))
-			if v.ovf {
-				vl = ovfFlag
-			}
-			le.PutUint32(b[o+2:], vl)
-			o += leafCellHeader
-			o += copy(b[o:], k)
-			o += copy(b[o:], v.data)
+			o -= leafCellHeader + len(k) + len(n.vals[i].data)
+			putLeafCell(b[o:], k, n.vals[i])
 		} else {
+			o -= branchCellHdr + len(k)
 			le.PutUint32(b[o:], uint32(n.kids[i]))
 			le.PutUint16(b[o+4:], uint16(len(k)))
-			o += branchCellHdr
-			o += copy(b[o:], k)
+			copy(b[o+branchCellHdr:], k)
 		}
+		le.PutUint16(b[pageHeader+2*i:], uint16(o))
 	}
+}
+
+func putLeafCell(b []byte, k []byte, v val) {
+	le.PutUint16(b, uint16(len(k)))
+	vl := uint32(len(v.data))
+	if v.ovf {
+		vl = ovfFlag
+	}
+	le.PutUint32(b[2:], vl)
+	copy(b[leafCellHeader:], k)
+	copy(b[leafCellHeader+len(k):], v.data)
+}
+
+// insertLeafCell adds a cell at index i of leaf page b without a decode.
+// It returns false if there is no free space between the slots and the
+// cells; then the caller rewrites the whole page.
+func insertLeafCell(b []byte, i int, k []byte, v val) bool {
+	n := nkeys(b)
+	low := len(b) - trailerSize
+	for j := 0; j < n; j++ {
+		low = min(low, slot(b, j))
+	}
+	size := leafCellHeader + len(k) + len(v.data)
+	if low-size < pageHeader+2*(n+1) {
+		return false
+	}
+	o := low - size
+	putLeafCell(b[o:], k, v)
+	copy(b[pageHeader+2*(i+1):pageHeader+2*(n+1)], b[pageHeader+2*i:pageHeader+2*n])
+	le.PutUint16(b[pageHeader+2*i:], uint16(o))
+	le.PutUint16(b[2:], uint16(n+1))
+	return true
 }
 
 func clone(b []byte) []byte {
