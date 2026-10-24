@@ -511,6 +511,13 @@ func matchRaw(m matcher, raw []byte) (bool, error) {
 	if _, all := m.(matchAll); all {
 		return true, nil
 	}
+	if t, ok := m.(*topMatcher); ok {
+		match, err := t.matchRaw(raw)
+		if err != nil {
+			return false, corruptf("document is not valid JSON")
+		}
+		return match, nil
+	}
 	doc, err := decodeJSON(raw)
 	if err != nil {
 		return false, corruptf("document is not valid JSON")

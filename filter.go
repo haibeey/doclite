@@ -209,7 +209,190 @@ func compileFilter(filter any) (matcher, map[string]any, error) {
 		return matchAll{}, m, nil
 	}
 	mt, err := compileDoc(m)
-	return mt, m, err
+	if err != nil {
+		return nil, nil, err
+	}
+	return &topMatcher{m: mt, fields: topFields(m, nil)}, m, nil
+}
+
+// topMatcher knows the top-level fields that its filter reads, so that
+// a document can be decoded in part.
+type topMatcher struct {
+	m      matcher
+	fields []string
+}
+
+func (t *topMatcher) match(doc any) bool { return t.m.match(doc) }
+
+// matchRaw tests the JSON text of a document. Only the fields that the
+// filter reads are decoded.
+func (t *topMatcher) matchRaw(raw []byte) (bool, error) {
+	doc := make(map[string]any, len(t.fields))
+	ok := scanTop(raw, func(key, val []byte) bool {
+		for _, f := range t.fields {
+			if f == string(key) {
+				x, err := decodeValue(val)
+				if err != nil {
+					return false
+				}
+				doc[f] = x
+			}
+		}
+		return true
+	})
+	if !ok {
+		// Keys with escapes and bad JSON take the slow path.
+		v, err := decodeJSON(raw)
+		if err != nil {
+			return false, err
+		}
+		return t.m.match(v), nil
+	}
+	return t.m.match(doc), nil
+}
+
+// scanTop calls fn for each key and raw value of the top-level JSON
+// object in b. It returns false if b is not a simple object (for
+// example, a key has an escape); the caller then decodes it in full.
+func scanTop(b []byte, fn func(key, val []byte) bool) bool {
+	i := skipSpace(b, 0)
+	if i >= len(b) || b[i] != '{' {
+		return false
+	}
+	i = skipSpace(b, i+1)
+	if i < len(b) && b[i] == '}' {
+		return true
+	}
+	for i < len(b) {
+		if b[i] != '"' {
+			return false
+		}
+		ks := i + 1
+		ke := ks
+		for ke < len(b) && b[ke] != '"' {
+			if b[ke] == '\\' {
+				return false
+			}
+			ke++
+		}
+		if ke >= len(b) {
+			return false
+		}
+		i = skipSpace(b, ke+1)
+		if i >= len(b) || b[i] != ':' {
+			return false
+		}
+		vs := skipSpace(b, i+1)
+		ve := skipValue(b, vs)
+		if ve < 0 || !fn(b[ks:ke], b[vs:ve]) {
+			return false
+		}
+		i = skipSpace(b, ve)
+		if i >= len(b) {
+			return false
+		}
+		if b[i] == '}' {
+			return true
+		}
+		if b[i] != ',' {
+			return false
+		}
+		i = skipSpace(b, i+1)
+	}
+	return false
+}
+
+func skipSpace(b []byte, i int) int {
+	for i < len(b) && (b[i] == ' ' || b[i] == '\t' || b[i] == '\n' || b[i] == '\r') {
+		i++
+	}
+	return i
+}
+
+// skipValue returns the end of the JSON value that starts at i, or -1.
+func skipValue(b []byte, i int) int {
+	if i >= len(b) {
+		return -1
+	}
+	switch b[i] {
+	case '"':
+		return skipString(b, i)
+	case '{', '[':
+		depth := 0
+		for i < len(b) {
+			switch b[i] {
+			case '"':
+				if i = skipString(b, i); i < 0 {
+					return -1
+				}
+				continue
+			case '{', '[':
+				depth++
+			case '}', ']':
+				depth--
+				if depth == 0 {
+					return i + 1
+				}
+			}
+			i++
+		}
+		return -1
+	default:
+		for i < len(b) && b[i] != ',' && b[i] != '}' && b[i] != ']' && b[i] != ' ' && b[i] != '\n' && b[i] != '\t' && b[i] != '\r' {
+			i++
+		}
+		return i
+	}
+}
+
+func skipString(b []byte, i int) int {
+	for i++; i < len(b); i++ {
+		switch b[i] {
+		case '\\':
+			i++
+		case '"':
+			return i + 1
+		}
+	}
+	return -1
+}
+
+// decodeValue decodes one JSON value. Simple scalars do not use the
+// json package.
+func decodeValue(v []byte) (any, error) {
+	if len(v) > 0 {
+		switch c := v[0]; {
+		case c == '"':
+			if bytes.IndexByte(v[1:len(v)-1], '\\') < 0 {
+				return string(v[1 : len(v)-1]), nil
+			}
+		case c == '-' || (c >= '0' && c <= '9'):
+			return json.Number(v), nil
+		case string(v) == "true":
+			return true, nil
+		case string(v) == "false":
+			return false, nil
+		case string(v) == "null":
+			return nil, nil
+		}
+	}
+	return decodeJSON(v)
+}
+
+func topFields(m map[string]any, out []string) []string {
+	for key, v := range m {
+		if strings.HasPrefix(key, "$") {
+			list, _ := v.([]any)
+			for _, x := range list {
+				if sm, ok := x.(map[string]any); ok {
+					out = topFields(sm, out)
+				}
+			}
+			continue
+		}
+		out = append(out, splitPath(key)[0])
+	}
+	return out
 }
 
 func compileDoc(m map[string]any) (matcher, error) {
