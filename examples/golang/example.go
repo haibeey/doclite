@@ -2,95 +2,84 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/haibeey/doclite"
 )
 
+type Employee struct {
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Age     int    `json:"age"`
+}
+
 func main() {
-	type Employer struct {
-		Name    string
-		Address string
-	}
+	path := "example.doclite"
+	defer os.Remove(path)
 
-	//Add Connect to DB
-	db, err := doclite.Connect("example.doclite")
+	db, err := doclite.Open(path, nil)
 	if err != nil {
-		fmt.Println("failed to connect to database:", err)
-		return
+		log.Fatal(err)
 	}
-	baseCollection := db.Base() // get base collection
+	defer db.Close()
 
-	//Insert 20 new document
+	employees := db.Collection("employees")
+	if err := employees.CreateIndex("age"); err != nil {
+		log.Fatal(err)
+	}
+
+	// Insert 20 documents in one transaction.
+	var docs []Employee
 	for i := 0; i < 20; i++ {
-		baseCollection.Insert(
-			&Employer{
-				Name:    fmt.Sprintf("%d docklite", i),
-				Address: "20, daniel's street, Abuja",
-			},
-		)
+		docs = append(docs, Employee{Name: fmt.Sprintf("employee %d", i), Address: "20, Daniel's street, Abuja", Age: 20 + i})
+	}
+	if _, err := employees.InsertMany(docs); err != nil {
+		log.Fatal(err)
 	}
 
-	e := &Employer{}
-	baseCollection.FindOne(14, e)
-	fmt.Println(e)
-	baseCollection.DeleteOne(16)
-	e = &Employer{}
-	baseCollection.FindOne(16, e)
-	fmt.Println(e)
+	var e Employee
+	if err := employees.FindOne(14, &e); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("document 14:", e)
 
-	//find all document matching address==doe
-	cur := baseCollection.Find(
-		&Employer{Address: "20, daniel's street, Abuja"},
-	)
-	count := 0
-	for {
-		emp := cur.Next()
-		if emp == nil {
-			break
+	if err := employees.DeleteOne(16); err != nil {
+		log.Fatal(err)
+	}
+	if err := employees.FindOne(16, &e); err == doclite.ErrNotFound {
+		fmt.Println("document 16 is deleted")
+	}
+
+	// Find with a cursor. The age index is used for the range.
+	cur, err := employees.Find(doclite.M{"age": doclite.M{"$gte": 30, "$lt": 35}})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cur.Close()
+	for cur.Next() {
+		if err := cur.Decode(&e); err != nil {
+			log.Fatal(err)
 		}
-		fmt.Println(emp)
-		count++
+		fmt.Println(cur.ID(), e)
 	}
-	fmt.Println("Found ", count, "documents")
-
-	//sub collection
-	type User struct {
-		Name    string
-		Address string
-		Friends []User
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
 	}
 
-	//create a new collection from
-	userCollection := baseCollection.Collection("user")
-	//Insert 20 new document
-	for i := 0; i < 20; i++ {
-		userCollection.Insert(
-			&User{
-				Name:    fmt.Sprintf("%d docklite %s", i, "user"),
-				Address: "20, daniel's street, Abuja",
-				Friends: []User{
-					{Name: fmt.Sprintf("%d testing %s", i, "user")},
-				},
-			},
-		)
-	}
-
-	u := &User{}
-	userCollection.FindOne(14, u)
-	userCollection.DeleteOne(16)
-	u = &User{}
-	userCollection.FindOne(16, u)
-	doe := &User{Address: "20, daniel's street, Abuja"}
-	cur = userCollection.Find(doe)
-	count = 0
-	for {
-		a := cur.NextObject(u)
-		if a == nil {
-			break
+	// Several changes in one atomic transaction.
+	err = db.Update(func(tx *doclite.Tx) error {
+		c := tx.Collection("employees")
+		if err := c.UpdateOne(1, Employee{Name: "renamed", Age: 99}); err != nil {
+			return err
 		}
-		count++
-		fmt.Println(a)
+		_, err := c.Collection("notes").Insert(doclite.M{"text": "a sub-collection"})
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
-	fmt.Println("Found ", count, "documents")
 
-	db.Close()
+	n, _ := employees.Count(nil)
+	fmt.Println("employees:", n)
 }
