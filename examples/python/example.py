@@ -1,28 +1,27 @@
-import pydoclite #install pydoclite
-import os,glob
+import glob
+import os
+import sys
 
+from doclite import Doclite
 
-def removeFiles():
-        for f in glob.glob("doclitetest.db*"):
-            try:
-                os.remove(f)
-            except OSError:
-                pass
+path = "example_py.doclite"
+lib = sys.argv[1] if len(sys.argv) > 1 else None
 
-removeFiles()
+with Doclite(path, lib_path=lib) as db:
+    people = db.collection("people")
+    people.create_index("age")
+    for i in range(10):
+        people.insert({"name": "person %d" % i, "age": 20 + i})
 
-d = pydoclite.Doclite.Connect(b"doclitetest.db")
-baseCollection = d.Base()
+    print(people.find_one(3))
+    people.delete_one(2)
+    print(people.find_one(2))  # None
+    people.update_one(1, {"name": "renamed", "age": 50})
 
-for i in range(10): 
-    baseCollection.Insert({"a":1})
+    print(people.find({"age": {"$gte": 25}}))
+    print("count:", people.count())
+    print("deleted:", people.delete_many({"age": {"$lt": 25}}))
+    print("count:", people.count())
 
-baseCollection.FindOne(1)
-baseCollection.DeleteOne(2)
-
-print(baseCollection.Find({"a":1}))
-baseCollection.Delete({"a":1})
-
-print(baseCollection.Find({"a":1}))
-d.Close()
-removeFiles()
+for f in glob.glob(path + "*"):
+    os.remove(f)

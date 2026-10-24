@@ -1,3 +1,10 @@
 *.doclite
-*.overflow
-doclitebin
+*.doclite-wal
+*.db
+*.db-wal
+*.so
+*.dylib
+*.dll
+sharedlib/*.h
+__pycache__/
+libdoclite.h
