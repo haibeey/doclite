@@ -9,6 +9,11 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// The lock is on one byte far past the end of the file. A lock on
+// Windows also blocks reads of the locked bytes, so it must not cover
+// real data.
+func lockRegion() *windows.Overlapped { return &windows.Overlapped{OffsetHigh: 0x40000000} }
+
 func lockFile(f *os.File, exclusive bool, timeout time.Duration) error {
 	flags := uint32(windows.LOCKFILE_FAIL_IMMEDIATELY)
 	if exclusive {
@@ -16,8 +21,7 @@ func lockFile(f *os.File, exclusive bool, timeout time.Duration) error {
 	}
 	deadline := time.Now().Add(timeout)
 	for {
-		ol := new(windows.Overlapped)
-		err := windows.LockFileEx(windows.Handle(f.Fd()), flags, 0, 1, 0, ol)
+		err := windows.LockFileEx(windows.Handle(f.Fd()), flags, 0, 1, 0, lockRegion())
 		if err == nil {
 			return nil
 		}
@@ -32,7 +36,7 @@ func lockFile(f *os.File, exclusive bool, timeout time.Duration) error {
 }
 
 func unlockFile(f *os.File) error {
-	return windows.UnlockFileEx(windows.Handle(f.Fd()), 0, 1, 0, new(windows.Overlapped))
+	return windows.UnlockFileEx(windows.Handle(f.Fd()), 0, 1, 0, lockRegion())
 }
 
 // syncDir is not needed on Windows.

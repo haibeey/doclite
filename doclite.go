@@ -190,6 +190,10 @@ func (db *DB) BeginContext(ctx context.Context, writable bool) (*Tx, error) {
 // Update runs fn in a write transaction. If fn returns nil, the
 // transaction commits; otherwise it rolls back and Update returns the
 // error of fn.
+//
+// Inside fn, use tx.Collection, not db.Collection. A write through
+// db.Collection waits for the write lock that fn holds, so it never
+// returns.
 func (db *DB) Update(fn func(tx *Tx) error) error {
 	return db.UpdateContext(context.Background(), fn)
 }
