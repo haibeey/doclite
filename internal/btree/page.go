@@ -41,8 +41,8 @@ const (
 
 var le = binary.LittleEndian
 
-func pageType(b []byte) byte  { return b[0] }
-func nkeys(b []byte) int      { return int(le.Uint16(b[2:])) }
+func pageType(b []byte) byte   { return b[0] }
+func nkeys(b []byte) int       { return int(le.Uint16(b[2:])) }
 func slot(b []byte, i int) int { return int(le.Uint16(b[pageHeader+2*i:])) }
 
 func rightChild(b []byte) pager.PgNo { return pager.PgNo(le.Uint32(b[4:])) }
