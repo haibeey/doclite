@@ -12,7 +12,11 @@ func main() {
 	}
 
 	//Add Connect to DB
-	db := doclite.Connect("example.doclite")
+	db, err := doclite.Connect("example.doclite")
+	if err != nil {
+		fmt.Println("failed to connect to database:", err)
+		return
+	}
 	baseCollection := db.Base() // get base collection
 
 	//Insert 20 new document

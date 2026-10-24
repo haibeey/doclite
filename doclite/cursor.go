@@ -97,7 +97,7 @@ func (c *Cursor) NextObject(object interface{}) interface{} {
 		c.cacheCursors = c.cacheCursors[1:]
 		if len(c.cacheCursors) > 0 {
 			c.servingCacheCursor = c.cacheCursors[0]
-			return c.Next()
+			return c.NextObject(object)
 		}
 	}
 	return doc

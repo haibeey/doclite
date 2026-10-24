@@ -38,9 +38,12 @@ func (c *Collection) GetCol() *doclite.Btree {
 }
 
 // Connect returns an instance of Doclite object database
-func Connect(filename string) *Doclite {
-	db := doclite.OpenDB(filename)
-	return &Doclite{db: db}
+func Connect(filename string) (*Doclite, error) {
+	db, err := doclite.OpenDB(filename)
+	if err != nil {
+		return nil, err
+	}
+	return &Doclite{db: db}, nil
 }
 
 /*
@@ -84,17 +87,19 @@ func (c *Collection) Insert(doc interface{}) (int64, error) {
 		return -1, err
 	}
 	defer c.Commit()
-	return c.tree.Insert(buf), nil
+	return c.tree.Insert(buf)
 }
 
 // DeleteOne deletes a document from the database
 // When document is deleted a new document take up it space and id
 func (c *Collection) DeleteOne(id int64) {
+	defer c.Commit()
 	c.tree.Delete(id)
 }
 
 // Delete remove all document matching filter from the database
 func (c *Collection) Delete(filter, doc interface{}) {
+	defer c.Commit()
 	c.tree.DeleteAll(filter, doc)
 }
 

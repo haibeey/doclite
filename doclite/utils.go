@@ -6,6 +6,9 @@ import (
 )
 
 func indexOfNodes(key int64, nodes []*Node, nodesLen int) int {
+	if nodesLen == 0 || len(nodes) == 0 {
+		return -1
+	}
 	l := 0
 	r := nodesLen
 	mid := nodesLen
@@ -20,7 +23,7 @@ func indexOfNodes(key int64, nodes []*Node, nodesLen int) int {
 			l = mid + 1
 		}
 	}
-	for mid-1 > 0 {
+	for mid-1 >= 0 {
 		if nodes[mid].document.id < key {
 			return mid
 		} else if nodes[mid].document.id == key {
@@ -34,6 +37,9 @@ func indexOfNodes(key int64, nodes []*Node, nodesLen int) int {
 }
 
 func indexOfOfn(key int64, nodes []*overflowNode, nodesLen int) int {
+	if nodesLen == 0 || len(nodes) == 0 {
+		return -1
+	}
 	l := 0
 	r := nodesLen
 	mid := nodesLen
@@ -48,7 +54,7 @@ func indexOfOfn(key int64, nodes []*overflowNode, nodesLen int) int {
 			l = mid + 1
 		}
 	}
-	for mid-1 > 0 {
+	for mid-1 >= 0 {
 		if nodes[mid].ID < key {
 			return mid
 		} else if nodes[mid].ID == key {
@@ -95,6 +101,10 @@ loop:
 		if field.IsZero() {
 			switch field.Kind() {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				fallthrough
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				fallthrough
+			case reflect.Float32, reflect.Float64:
 			default:
 				continue loop
 			}

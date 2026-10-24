@@ -47,7 +47,12 @@ func ConvertToStruct(m map[string]interface{}, s interface{}) error {
 //
 //export ConnectDB
 func ConnectDB(filename string) {
-	externalDB = doclite.Connect(filename)
+	var err error
+	externalDB, err = doclite.Connect(filename)
+	if err != nil {
+		fmt.Println("failed to connect to database:", err)
+		return
+	}
 	Base()
 }
 
@@ -148,7 +153,12 @@ func Find(name, filter string) *C.char {
 //export UpdateOneDoc
 func UpdateOneDoc(id int64, doc string, name string) {
 	collection := getColFromName(name)
-	collection.DeleteOne(id)
+	document := make(map[string]interface{})
+	err := json.Unmarshal([]byte(doc), &document)
+	if err != nil {
+		return
+	}
+	collection.UpdateOneDoc(id, document)
 }
 
 func getColFromName(name string) *doclite.Collection {

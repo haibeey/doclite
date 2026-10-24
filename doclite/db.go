@@ -75,7 +75,7 @@ func openFile(fileName string, flag int) *os.File {
 }
 
 // OpenDB instantiate our database
-func OpenDB(fileName string) *DB {
+func OpenDB(fileName string) (*DB, error) {
 	if _, err := os.Stat(fileName); os.IsNotExist(err) {
 		f := openFile(fileName, os.O_RDWR|os.O_CREATE)
 		db := &DB{file: f, overflows: make(map[string][]*overflowNode)}
@@ -88,18 +88,20 @@ func OpenDB(fileName string) *DB {
 
 		db.rootTree = db.newBtree("")
 		db.moveOverflow()
-		return db
+		return db, nil
 	}
 	os.Remove(fmt.Sprintf("%s.overflow", fileName))
 	db := &DB{file: openFile(fileName, os.O_RDWR), overflows: make(map[string][]*overflowNode)}
-	db.getMeta()
+	if _, err := db.getMeta(); err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
 	db.moveOverflow()
 	t, err := db.initBtree()
 	if err != nil {
 		fmt.Println("database might have been corrupted")
 	}
 	db.rootTree = t
-	return db
+	return db, nil
 }
 
 // Connect start a connection to this data base for insertion and deletion
@@ -140,13 +142,22 @@ func (db *DB) initBtree() (*Btree, error) {
 	return tree, err
 }
 
-func (db *DB) getMeta() *Meta {
+func (db *DB) getMeta() (*Meta, error) {
 	buf := make([]byte, metaDataLen)
 	db.file.Seek(0, os.SEEK_SET)
-	db.file.Read(buf)
+	n, err := db.file.Read(buf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read metadata: %w", err)
+	}
+	if n < metaDataLen {
+		return nil, fmt.Errorf("failed to read metadata: short read (expected %d bytes, got %d)", metaDataLen, n)
+	}
 	db.metadata = &Meta{}
-	bson.Unmarshal(buf[:], db.metadata)
-	return db.metadata
+	err = bson.Unmarshal(buf[:], db.metadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+	}
+	return db.metadata, nil
 }
 
 func (db *DB) moveOverflow() error {
@@ -228,6 +239,11 @@ func (db *DB) Close() error {
 // Save saves all current changes on the database
 func (db *DB) Save() error {
 	db.rootTree.Save()
+
+	err := db.bringBackOverflow()
+	if err != nil {
+		return err
+	}
 
 	data, err := json.Marshal(db.rootTree)
 	db.metadata.RootTreeSize = int64(len(data))
